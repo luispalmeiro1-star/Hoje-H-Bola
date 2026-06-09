@@ -39,6 +39,7 @@ function formatShortDate(dateStr) {
   return new Date(y,m-1,d).toLocaleDateString("pt-PT",{day:"numeric",month:"short"});
 }
 function formatTime(ts) {
+  if(!ts) return "";
   return new Date(ts).toLocaleTimeString("pt-PT",{hour:"2-digit",minute:"2-digit"});
 }
 function countdown(dateStr, timeStr) {
@@ -62,11 +63,17 @@ function shuffle(arr) {
   for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}
   return a;
 }
-function makeTeams(confirmed) {
-  const s=shuffle(confirmed), n=s.length;
-  if(n>=15) return [s.slice(0,5),s.slice(5,10),s.slice(10,15)];
-  const half=Math.ceil(n/2);
-  return [s.slice(0,half),s.slice(half)];
+function makeTeams(confirmed, players=[]) {
+  const n = confirmed.length;
+  const numTeams = n >= 15 ? 3 : 2;
+  const enriched = confirmed.map(p => ({...p, position: players.find(pl=>pl.id===p.id)?.position||"Polivalente"}));
+  const grs = shuffle(enriched.filter(p=>p.position==="GR"));
+  const pols = shuffle(enriched.filter(p=>p.position!=="GR"));
+  const teams = Array.from({length:numTeams},()=>[]);
+  grs.slice(0,numTeams).forEach((gr,i)=>teams[i].push(gr));
+  const rest = shuffle([...pols,...grs.slice(numTeams)]);
+  rest.forEach((p,i)=>teams[i%numTeams].push(p));
+  return teams;
 }
 function getAvatar(player) {
   return player?.avatar_color || AVATAR_COLORS[0];
@@ -150,12 +157,12 @@ export default function App() {
   useEffect(()=>{
     (async()=>{setLoading(true);await Promise.all([loadPlayers(),loadGameInfo(),loadHistory(),loadDebts(),loadMessages(),loadMvp()]);setLoading(false);})();
     const subs=[
-      supabase.channel("p").on("postgres_changes",{event:"*",schema:"public",table:"players"},loadPlayers).subscribe(),
-      supabase.channel("g").on("postgres_changes",{event:"*",schema:"public",table:"game_info"},loadGameInfo).subscribe(),
-      supabase.channel("h").on("postgres_changes",{event:"*",schema:"public",table:"game_history"},loadHistory).subscribe(),
-      supabase.channel("d").on("postgres_changes",{event:"*",schema:"public",table:"debts"},loadDebts).subscribe(),
-      supabase.channel("c").on("postgres_changes",{event:"*",schema:"public",table:"chat_messages"},loadMessages).subscribe(),
-      supabase.channel("m").on("postgres_changes",{event:"*",schema:"public",table:"mvp_votes"},loadMvp).subscribe(),
+      supabase.channel("players_ch").on("postgres_changes",{event:"*",schema:"public",table:"players"},loadPlayers).subscribe(),
+      supabase.channel("gameinfo_ch").on("postgres_changes",{event:"*",schema:"public",table:"game_info"},loadGameInfo).subscribe(),
+      supabase.channel("history_ch").on("postgres_changes",{event:"*",schema:"public",table:"game_history"},loadHistory).subscribe(),
+      supabase.channel("debts_ch").on("postgres_changes",{event:"*",schema:"public",table:"debts"},loadDebts).subscribe(),
+      supabase.channel("chat_ch").on("postgres_changes",{event:"*",schema:"public",table:"chat_messages"},loadMessages).subscribe(),
+      supabase.channel("mvp_ch").on("postgres_changes",{event:"*",schema:"public",table:"mvp_votes"},loadMvp).subscribe(),
     ];
     return()=>subs.forEach(s=>supabase.removeChannel(s));
   },[loadPlayers,loadGameInfo,loadHistory,loadDebts,loadMessages,loadMvp]);
@@ -216,6 +223,10 @@ export default function App() {
     await supabase.from("players").update(updates).eq("id",id);
     showToast("Perfil atualizado ✓");
   };
+  const updatePosition = async(id, pos) => {
+    await supabase.from("players").update({position: pos}).eq("id", id);
+    showToast("Posição atualizada ✓");
+  };
   const resetGame = async(winnerTeam)=>{
     const paidCount=confirmed.filter(p=>p.paid).length;
     const collected=paidCount*COST;
@@ -257,7 +268,7 @@ export default function App() {
   };
 
   const liveUser = currentUser ? players.find(p=>p.id===currentUser.id) : null;
-  const shared = {gameInfo,cdStr,confirmed,waiting,notYet,guests,spotsLeft,members,history,piggybank,debts,messages,mvpVotes,viewingDate,setViewingDate,historyGame,isViewingHistory,effectiveDate,darkMode,setDarkMode};
+  const shared = {gameInfo,cdStr,confirmed,waiting,notYet,guests,spotsLeft,members,players,history,piggybank,debts,messages,mvpVotes,viewingDate,setViewingDate,historyGame,isViewingHistory,effectiveDate,darkMode,setDarkMode};
 
   if(loading) return (
     <div style={{minHeight:"100vh",background:"#166534",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:16}}>
@@ -676,7 +687,7 @@ function ProfileView({player,darkMode,onUpdateProfile,onBack,onLogout}) {
 }
 
 // ── PLAYER VIEW ──────────────────────────────────────────────────────────────
-function PlayerView({gameInfo,cdStr,confirmed,waiting,notYet,guests,spotsLeft,players,members,debts,messages,mvpVotes,history,piggybank,viewingDate,setViewingDate,historyGame,isViewingHistory,effectiveDate,darkMode,setDarkMode,player,onToggle,onAddGuest,onRemoveGuest,onUpdateProfile,onVoteMvp,onSendMessage,onLogout,setView}) {
+function PlayerView({gameInfo,cdStr,confirmed,waiting,notYet,guests,spotsLeft,players,members,debts,messages,mvpVotes,history,piggybank,viewingDate,setViewingDate,historyGame,isViewingHistory,effectiveDate,darkMode,setDarkMode,player,onToggle,onAddGuest,onRemoveGuest,onUpdateProfile,onVoteMvp,onSendMessage,onUpdatePosition,onLogout,setView}) {
   const isIn=player.status==="in", isWait=player.status==="wait";
   const waitPos=waiting.findIndex(p=>p.id===player.id)+1;
   const myGuests=guests.filter(g=>g.invited_by_id===player.id);
@@ -730,6 +741,17 @@ function PlayerView({gameInfo,cdStr,confirmed,waiting,notYet,guests,spotsLeft,pl
           {isIn||isWait?<><Icon name="x" size={18}/> CANCELAR PRESENÇA</>:<><Icon name="check" size={18}/> CONFIRMAR PRESENÇA</>}
         </button>
 
+        {/* Position selector */}
+        <div style={{display:"flex",gap:8,marginBottom:14,alignItems:"center"}}>
+          <span style={{fontSize:11,fontWeight:700,color:"#6b7280",letterSpacing:1}}>POSIÇÃO:</span>
+          <button onClick={()=>onUpdatePosition("Polivalente")} style={{flex:1,padding:"8px",borderRadius:10,border:`2px solid ${(player.position||"Polivalente")==="Polivalente"?"#16a34a":"#d1fae5"}`,background:(player.position||"Polivalente")==="Polivalente"?"#dcfce7":"white",fontWeight:800,fontSize:13,cursor:"pointer",color:(player.position||"Polivalente")==="Polivalente"?"#14532d":"#6b7280"}}>
+            ⚽ Polivalente
+          </button>
+          <button onClick={()=>onUpdatePosition("GR")} style={{flex:1,padding:"8px",borderRadius:10,border:`2px solid ${player.position==="GR"?"#2563eb":"#d1fae5"}`,background:player.position==="GR"?"#dbeafe":"white",fontWeight:800,fontSize:13,cursor:"pointer",color:player.position==="GR"?"#1e3a8a":"#6b7280"}}>
+            🧤 Guarda-Redes
+          </button>
+        </div>
+
         {/* MVP vote */}
         {confirmed.length>=MIN_PLAYERS&&(
           <MvpVote confirmed={confirmed} mvpVotes={mvpVotes} currentUserId={player.id} gameDate={gameInfo.date} onVote={onVoteMvp}/>
@@ -742,7 +764,7 @@ function PlayerView({gameInfo,cdStr,confirmed,waiting,notYet,guests,spotsLeft,pl
             <div style={{background:"#f0fdf4",borderRadius:10,padding:"8px 12px",marginBottom:10,fontSize:12,color:"#166534",fontWeight:600}}>
               {confirmed.length>=15?"🏆 3 equipas de 5":`⚽ 2 equipas${confirmed.length%2!==0?" + 1 suplente":""}`}
             </div>
-            <button className="btn-primary" style={{width:"100%",justifyContent:"center",marginBottom:teams?10:0}} onClick={()=>{setTeams(makeTeams(confirmed));setWinnerTeam(null);}}>
+            <button className="btn-primary" style={{width:"100%",justifyContent:"center",marginBottom:teams?10:0}} onClick={()=>{setTeams(makeTeams(confirmed,players));setWinnerTeam(null);}}>
               <Icon name="shuffle" size={14}/> {teams?"SORTEAR NOVAMENTE":"SORTEAR EQUIPAS"}
             </button>
             {teams&&<TeamsDisplay teams={teams} players={players} winnerTeam={winnerTeam} setWinnerTeam={setWinnerTeam}/>}
@@ -896,7 +918,7 @@ function AdminView({gameInfo,cdStr,confirmed,waiting,notYet,guests,spotsLeft,pla
               <div style={{background:"#f0fdf4",borderRadius:10,padding:"8px 12px",marginBottom:10,fontSize:12,color:"#166534",fontWeight:600}}>
                 {confirmed.length>=15?"🏆 3 equipas de 5":`⚽ 2 equipas${confirmed.length%2!==0?" + 1 suplente":""}`}
               </div>
-              <button className="btn-primary" style={{width:"100%",justifyContent:"center",marginBottom:12}} onClick={()=>{setTeams(makeTeams(confirmed));setWinnerTeam(null);}}>
+              <button className="btn-primary" style={{width:"100%",justifyContent:"center",marginBottom:12}} onClick={()=>{setTeams(makeTeams(confirmed,players));setWinnerTeam(null);}}>
                 <Icon name="shuffle" size={14}/> {teams?"SORTEAR NOVAMENTE":"SORTEAR EQUIPAS"}
               </button>
               {teams&&<TeamsDisplay teams={teams} players={players} onVoteWinner={(t)=>setWinnerTeam(t)} winnerTeam={winnerTeam} setWinnerTeam={setWinnerTeam}/>}
