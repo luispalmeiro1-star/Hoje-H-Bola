@@ -298,10 +298,29 @@ export default function App() {
     for(const p of unpaidMembers){
       await supabase.from("debts").insert({player_id:p.id,player_name:p.name,amount:COST,description:`Jogo de ${gameInfo.date}`});
     }
-    // update stats
-    for(const p of confirmed.filter(pl=>!pl.is_guest)){
+    // Save attendance
+    const confirmedMembers=confirmed.filter(p=>!p.is_guest);
+    for(const p of confirmedMembers){
+      await supabase.from("game_attendance").insert({game_date:gameInfo.date,player_id:p.id,player_name:p.name});
+    }
+    // Update stats + streaks
+    for(const p of confirmedMembers){
       const pl=players.find(m=>m.id===p.id);
-      if(pl){await supabase.from("players").update({total_games:(pl.total_games||0)+1,total_paid:(pl.total_paid||0)+(p.paid?COST:0)}).eq("id",p.id);}
+      if(pl){
+        const newStreak=(pl.current_streak||0)+1;
+        const newBest=Math.max(pl.best_streak||0,newStreak);
+        await supabase.from("players").update({
+          total_games:(pl.total_games||0)+1,
+          total_paid:(pl.total_paid||0)+(p.paid?COST:0),
+          current_streak:newStreak,
+          best_streak:newBest
+        }).eq("id",p.id);
+      }
+    }
+    // Reset streak for members who did NOT play
+    const didNotPlay=members.filter(m=>!confirmedMembers.find(c=>c.id===m.id));
+    for(const p of didNotPlay){
+      await supabase.from("players").update({current_streak:0}).eq("id",p.id);
     }
     // get mvp
     const votes=mvpVotes.filter(v=>v.game_date===gameInfo.date);
@@ -317,7 +336,7 @@ export default function App() {
       await supabase.from("game_history").insert({date:gameInfo.date,players_count:confirmed.length,collected,winner_team:winnerTeam||null,mvp_name:mvpName});
     }
     await supabase.from("players").delete().eq("is_guest",true);
-    await supabase.from("players").update({status:"out",paid:false,confirmed_at:null}).eq("is_guest",false);
+    await supabase.from("players").update({status:"out",paid:false,confirmed_at:null,team:null}).eq("is_guest",false);
     showToast("Jogo fechado ✓");
   };
   const addDebt  = async(playerId,playerName,amount,desc)=>{await supabase.from("debts").insert({player_id:playerId,player_name:playerName,amount,description:desc});showToast("Dívida registada ✓");};
@@ -773,12 +792,22 @@ function ConfirmedList({confirmed=[],onTogglePaid,isAdmin,debts=[],players=[]}) 
 // ── STATS VIEW ───────────────────────────────────────────────────────────────
 function StatsView({members=[],history=[],debts=[],mvpVotes=[],piggybank=0,player,darkMode,onBack}) {
   const dm=darkMode;
-  // ranking by total_games
   const ranked=[...(members||[])].filter(p=>!p.is_guest).sort((a,b)=>(b.total_games||0)-(a.total_games||0));
   const mvpCounts={};
   history.forEach(g=>{if(g.mvp_name)mvpCounts[g.mvp_name]=(mvpCounts[g.mvp_name]||0)+1;});
-  const myDebt=debts.filter(d=>d.player_id===player.id).reduce((s,d)=>s+Number(d.amount),0);
-  const pct=player.total_games>0?Math.round(((player.total_games||0)/Math.max(...ranked.map(p=>p.total_games||0),1))*100):0;
+  const myDebt=(debts||[]).filter(d=>d.player_id===player.id).reduce((s,d)=>s+Number(d.amount),0);
+  const totalGames=history.length;
+  const myPct=totalGames>0?Math.round(((player.total_games||0)/totalGames)*100):0;
+  const myMvps=mvpCounts[player.name]||0;
+
+  const stats=[
+    {icon:"⚽",label:"Jogos",value:player.total_games||0,color:"#16a34a"},
+    {icon:"⭐",label:"MVPs",value:myMvps,color:"#d97706"},
+    {icon:"📈",label:"Presença",value:`${myPct}%`,color:"#2563eb"},
+    {icon:"🔥",label:"Série Atual",value:player.current_streak||0,color:"#dc2626"},
+    {icon:"🏆",label:"Melhor Série",value:player.best_streak||0,color:"#7c3aed"},
+    {icon:"💰",label:"Total Pago",value:`${player.total_paid||0}€`,color:"#0891b2"},
+  ];
 
   return (
     <div className="screen">
@@ -789,42 +818,48 @@ function StatsView({members=[],history=[],debts=[],mvpVotes=[],piggybank=0,playe
         </div>
       </div>
       <div className="body">
-        {/* My card */}
-        <div style={{background:dm?"#1a2e1a":"white",border:`2px solid #16a34a`,borderRadius:16,padding:16,marginBottom:16,display:"flex",gap:14,alignItems:"center"}}>
-          <Avatar player={player} size={52}/>
+        <div style={{background:dm?"#1a2e1a":"white",border:"2px solid #16a34a",borderRadius:16,padding:16,marginBottom:14,display:"flex",gap:14,alignItems:"center"}}>
+          <Avatar player={player} size={56}/>
           <div style={{flex:1}}>
             <div style={{fontSize:16,fontWeight:800,color:dm?"white":"#14532d"}}>{player.name}</div>
-            <div style={{fontSize:11,color:"#6b7280",marginTop:2}}>{player.is_admin?"Admin ★":"Jogador"}</div>
-            <div style={{display:"flex",gap:12,marginTop:8}}>
-              <div><div style={{fontFamily:"'Bebas Neue',cursive",fontSize:24,color:"#16a34a"}}>{player.total_games||0}</div><div style={{fontSize:9,color:"#6b7280",letterSpacing:1}}>JOGOS</div></div>
-              <div><div style={{fontFamily:"'Bebas Neue',cursive",fontSize:24,color:"#2563eb"}}>{player.total_paid||0}€</div><div style={{fontSize:9,color:"#6b7280",letterSpacing:1}}>PAGO</div></div>
-              {myDebt>0&&<div><div style={{fontFamily:"'Bebas Neue',cursive",fontSize:24,color:"#dc2626"}}>{myDebt}€</div><div style={{fontSize:9,color:"#6b7280",letterSpacing:1}}>EM DÍVIDA</div></div>}
-              {mvpCounts[player.name]&&<div><div style={{fontFamily:"'Bebas Neue',cursive",fontSize:24,color:"#d97706"}}>{mvpCounts[player.name]}x</div><div style={{fontSize:9,color:"#6b7280",letterSpacing:1}}>MVP</div></div>}
-            </div>
+            <div style={{fontSize:11,color:"#6b7280",marginTop:2}}>{player.is_admin?"Admin ★":player.position==="GR"?"🧤 Guarda-Redes":"⚽ Polivalente"}</div>
+            {myDebt>0&&<div style={{fontSize:11,color:"#dc2626",fontWeight:700,marginTop:4}}>⚠️ {myDebt}€ em dívida</div>}
           </div>
         </div>
 
-        {/* Ranking */}
+        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:8,marginBottom:14}}>
+          {stats.map((s,i)=>(
+            <div key={i} style={{background:dm?"#1a2e1a":"white",border:`1px solid ${dm?"#333":"#d1fae5"}`,borderRadius:12,padding:"10px 8px",textAlign:"center"}}>
+              <div style={{fontSize:16,marginBottom:4}}>{s.icon}</div>
+              <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:22,color:s.color,lineHeight:1}}>{s.value}</div>
+              <div style={{fontSize:9,color:"#6b7280",fontWeight:700,letterSpacing:1,marginTop:3}}>{s.label}</div>
+            </div>
+          ))}
+        </div>
+
         <p className="section-label"><Icon name="trophy" size={12}/> RANKING DE PRESENÇAS</p>
-        <div className="player-list" style={{marginBottom:16}}>
+        <div className="player-list" style={{marginBottom:14}}>
           {ranked.map((p,i)=>{
             const pctBar=ranked[0].total_games>0?Math.round(((p.total_games||0)/(ranked[0].total_games||1))*100):0;
             const mvps=mvpCounts[p.name]||0;
+            const pPct=totalGames>0?Math.round(((p.total_games||0)/totalGames)*100):0;
             return (
-              <div key={p.id} className="list-row" style={{background:p.id===player.id?(dm?"#1a2e1a":"#f0fdf4"):(dm?"#111":"white"),border:p.id===player.id?"2px solid #16a34a":"1px solid #d1fae5"}}>
-                <span style={{fontSize:12,fontWeight:800,color:i===0?"#d97706":i===1?"#94a3b8":i===2?"#b45309":"#9ca3af",width:18,flexShrink:0}}>{i===0?"🥇":i===1?"🥈":i===2?"🥉":`${i+1}`}</span>
-                <Avatar player={p} size={28}/>
-                <div className="list-info">
-                  <span className="list-name" style={{color:dm?"white":"#14532d"}}>{p.name}{p.id===player.id?" (tu)":""}</span>
-                  <div style={{display:"flex",alignItems:"center",gap:6,marginTop:3}}>
-                    <div style={{flex:1,height:4,background:dm?"#333":"#f0fdf4",borderRadius:99,overflow:"hidden"}}>
-                      <div style={{width:`${pctBar}%`,height:"100%",background:"linear-gradient(90deg,#16a34a,#4ade80)",borderRadius:99}}/>
-                    </div>
-                    <span style={{fontSize:10,color:"#6b7280",flexShrink:0}}>{p.total_games||0} jogos</span>
-                    {mvps>0&&<span style={{fontSize:10,color:"#d97706",flexShrink:0}}>⭐{mvps}</span>}
+              <div key={p.id} className="list-row" style={{background:p.id===player.id?(dm?"#1a2e1a":"#f0fdf4"):(dm?"#111":"white"),border:p.id===player.id?"2px solid #16a34a":"1px solid #d1fae5",flexDirection:"column",alignItems:"stretch",gap:6}}>
+                <div style={{display:"flex",alignItems:"center",gap:8}}>
+                  <span style={{fontSize:12,fontWeight:800,color:i===0?"#d97706":i===1?"#94a3b8":i===2?"#b45309":"#9ca3af",width:18,flexShrink:0}}>{i===0?"🥇":i===1?"🥈":i===2?"🥉":`${i+1}`}</span>
+                  <Avatar player={p} size={28}/>
+                  <div className="list-info">
+                    <span className="list-name" style={{color:dm?"white":"#14532d"}}>{p.name}{p.id===player.id?" (tu)":""}</span>
+                    <span style={{fontSize:10,color:"#6b7280"}}>{p.total_games||0} jogos · {pPct}% {mvps>0?`· ⭐${mvps}`:""}</span>
+                  </div>
+                  <div style={{textAlign:"right",flexShrink:0}}>
+                    <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:16,color:"#16a34a"}}>{p.total_paid||0}€</div>
+                    {(p.current_streak||0)>1&&<div style={{fontSize:10,color:"#dc2626",fontWeight:700}}>🔥{p.current_streak}</div>}
                   </div>
                 </div>
-                <span style={{fontFamily:"'Bebas Neue',cursive",fontSize:18,color:"#16a34a"}}>{p.total_paid||0}€</span>
+                <div style={{height:4,background:dm?"#333":"#f0fdf4",borderRadius:99,overflow:"hidden",marginLeft:26}}>
+                  <div style={{width:`${pctBar}%`,height:"100%",background:"linear-gradient(90deg,#16a34a,#4ade80)",borderRadius:99}}/>
+                </div>
               </div>
             );
           })}
