@@ -380,7 +380,7 @@ export default function App() {
     <div style={{minHeight:"100vh",background:"#166534",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:16}}>
       <style>{getCss(false)}</style>
       <div style={{fontSize:48}}>⚽</div>
-      <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:32,color:"white",letterSpacing:3}}>KICKOFF</div>
+      <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:28,color:"white",letterSpacing:2}}>HOJE HÁ BOLA</div>
       <div className="spinner"/>
     </div>
   );
@@ -685,7 +685,7 @@ function FieldHeader({gameInfo,cdStr,confirmed,notYet,waiting,viewingDate,setVie
       <div className="field-lines"><div className="fl fl-cc"/><div className="fl fl-cl"/><div className="fl fl-lb"/><div className="fl fl-rb"/></div>
       <div className="field-content">
         <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:5}}>
-          <div className="field-badge"><span style={{fontSize:16}}>⚽</span><span className="field-badge-name">KickOff</span></div>
+          <div className="field-badge"><span style={{fontSize:16}}>⚽</span><span className="field-badge-name">Hoje Há Bola</span></div>
           <div style={{display:"flex",gap:4,alignItems:"center"}}>
             <button className="field-nav-btn" onClick={()=>setViewingDate(prevWeek(effectiveDate))}><Icon name="left" size={13}/></button>
             {isViewingHistory&&<button className="field-nav-btn" style={{fontSize:10,padding:"3px 8px",fontWeight:800}} onClick={()=>setViewingDate(null)}>HOJE</button>}
@@ -903,37 +903,31 @@ function MvpVote({confirmed=[],mvpVotes=[],currentUserId,gameDate,onVote}) {
 
 // ── PIGGYBANK ─────────────────────────────────────────────────────────────────
 function PiggyBankCard({piggybank,history}) {
-  const [show,setShow]=useState(false);
+  const totalReceived = history.reduce((s,g)=>s+(Number(g.collected)||0),0);
+  const totalRent = history.length * RENT;
+
   return (
     <div style={{marginTop:16}}>
       <p className="section-label"><Icon name="euro" size={12}/> MEALHEIRO DO GRUPO</p>
-      <div style={{background:piggybank>=0?"#dcfce7":"#fee2e2",borderRadius:14,padding:"14px",border:`2px solid ${piggybank>=0?"#16a34a":"#dc2626"}`,marginBottom:8}}>
-        <div style={{fontSize:10,color:"#6b7280",fontWeight:700,marginBottom:4}}>SALDO ACUMULADO (após pagar pavilhão)</div>
-        <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:40,color:piggybank>=0?"#16a34a":"#dc2626",lineHeight:1}}>{piggybank>=0?"+":""}{piggybank}€</div>
-        <div style={{fontSize:11,color:"#6b7280",marginTop:4}}>Cada jogo desconta {RENT}€ · {COST}€ por jogador</div>
-      </div>
-      <button className="btn-outline" onClick={()=>setShow(v=>!v)} style={{marginBottom:10}}><Icon name="chart" size={13}/> {show?"ESCONDER":"VER"} ESTATÍSTICAS</button>
-      {show&&(
-        <div style={{background:"white",borderRadius:14,padding:"14px",border:"1px solid #d1fae5"}}>
-          <div style={{fontSize:10,fontWeight:800,color:"#6b7280",marginBottom:10,letterSpacing:1}}>JOGADORES POR JOGO</div>
-          {history.length===0&&<p className="empty-msg">Ainda sem jogos registados</p>}
-          {history.slice(0,12).map((g,i)=>(
-            <div key={i} style={{display:"flex",alignItems:"center",gap:8,marginBottom:8}}>
-              <span style={{fontSize:10,color:"#6b7280",width:55,flexShrink:0}}>{formatShortDate(g.date)}</span>
-              <div style={{flex:1,background:"#f0fdf4",borderRadius:99,height:22,overflow:"hidden"}}>
-                <div style={{width:`${(g.players_count/MAX_PLAYERS)*100}%`,minWidth:28,background:g.players_count>=MIN_PLAYERS?"linear-gradient(90deg,#16a34a,#4ade80)":"linear-gradient(90deg,#d97706,#fbbf24)",height:"100%",borderRadius:99,display:"flex",alignItems:"center",justifyContent:"flex-end",paddingRight:6}}>
-                  <span style={{fontSize:10,fontWeight:800,color:"white"}}>{g.players_count}</span>
-                </div>
-              </div>
-              <div style={{textAlign:"right",flexShrink:0}}>
-                <div style={{fontSize:10,fontWeight:700,color:"#16a34a"}}>{g.collected}€</div>
-                {g.mvp_name&&<div style={{fontSize:9,color:"#d97706"}}>⭐{g.mvp_name}</div>}
-                {g.winner_team&&<div style={{fontSize:9,color:"#2563eb"}}>🏆{g.winner_team}</div>}
-              </div>
-            </div>
-          ))}
+      <div style={{background:"linear-gradient(135deg,#0891b2,#0e7490)",borderRadius:16,padding:"18px",marginBottom:8,color:"white"}}>
+        <div style={{fontSize:10,fontWeight:700,letterSpacing:1,opacity:0.8,marginBottom:6}}>SALDO ATUAL</div>
+        <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:42,lineHeight:1,color:piggybank>=0?"white":"#fecaca"}}>{piggybank>=0?"+":""}{piggybank}€</div>
+        <div style={{display:"flex",gap:16,marginTop:14,paddingTop:14,borderTop:"1px solid rgba(255,255,255,0.2)"}}>
+          <div>
+            <div style={{fontSize:9,opacity:0.7,letterSpacing:0.5}}>TOTAL RECEBIDO</div>
+            <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:20,color:"#86efac"}}>+{totalReceived}€</div>
+          </div>
+          <div>
+            <div style={{fontSize:9,opacity:0.7,letterSpacing:0.5}}>PAGO EM ALUGUER</div>
+            <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:20,color:"#fca5a5"}}>-{totalRent}€</div>
+          </div>
+          <div>
+            <div style={{fontSize:9,opacity:0.7,letterSpacing:0.5}}>JOGOS PAGOS</div>
+            <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:20,color:"white"}}>{history.length}</div>
+          </div>
         </div>
-      )}
+      </div>
+      <div style={{fontSize:11,color:"#6b7280",textAlign:"center"}}>Cada jogo desconta {RENT}€ do aluguer · {COST}€ por jogador</div>
     </div>
   );
 }
@@ -1498,7 +1492,7 @@ body{background:${dm?"#0a0f0a":"#0d1a0e"};font-family:'DM Sans',sans-serif;color
 .fl-rb{top:15%;bottom:15%;right:-20px;width:65px;border-radius:8px 0 0 8px;}
 .field-content{position:relative;z-index:1;}
 .field-badge{display:flex;align-items:center;gap:7px;}
-.field-badge-name{font-family:'Bebas Neue',cursive;font-size:20px;letter-spacing:3px;color:white;}
+.field-badge-name{font-family:'Bebas Neue',cursive;font-size:18px;letter-spacing:1.5px;color:white;}
 .field-nav-btn{background:rgba(0,0,0,0.25);border:none;border-radius:8px;padding:5px 7px;color:white;cursor:pointer;display:flex;align-items:center;font-family:'DM Sans',sans-serif;}
 .field-nav-btn:hover{background:rgba(0,0,0,0.4);}
 .field-date{font-size:11px;color:rgba(255,255,255,0.75);text-transform:capitalize;margin:4px 0;}
