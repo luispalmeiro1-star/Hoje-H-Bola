@@ -218,7 +218,15 @@ export default function App() {
       const saved=JSON.parse(localStorage.getItem("hhb_session"));
       if(saved?.playerId){
         const p=players.find(pl=>pl.id===saved.playerId);
-        if(p){setCurrentUser(p);setView(p.is_admin?"admin":"player");}
+        if(p){
+          setCurrentUser(p);setView(p.is_admin?"admin":"player");
+          try{
+            window.OneSignalDeferred = window.OneSignalDeferred || [];
+            window.OneSignalDeferred.push(async function(OneSignal) {
+              await OneSignal.login(String(p.id));
+            });
+          }catch(e){}
+        }
       }
     }catch(e){}
   },[loading,players]);
@@ -231,12 +239,25 @@ export default function App() {
   const spotsLeft = Math.max(0,MAX_PLAYERS-confirmed.length);
   const cdStr     = countdown(gameInfo.date,gameInfo.time);
 
+  const linkOneSignal = (playerId) => {
+    try{
+      window.OneSignalDeferred = window.OneSignalDeferred || [];
+      window.OneSignalDeferred.push(async function(OneSignal) {
+        await OneSignal.login(String(playerId));
+        if(OneSignal.Notifications.permission !== true){
+          await OneSignal.Notifications.requestPermission();
+        }
+      });
+    }catch(e){}
+  };
+
   const handleLogin = async(identifier,password)=>{
     const clean=identifier.trim().toLowerCase();
     const p=players.find(p=>p.username?.toLowerCase()===clean || p.phone?.replace(/\s+/g,"")===identifier.trim().replace(/\s+/g,""));
     if(!p||p.password!==password) return false;
     setCurrentUser(p); setView(p.is_admin?"admin":"player");
     localStorage.setItem("hhb_session", JSON.stringify({playerId:p.id}));
+    linkOneSignal(p.id);
     return true;
   };
   const handleLogout = ()=>{setCurrentUser(null);setView("login");setViewingDate(null);};
