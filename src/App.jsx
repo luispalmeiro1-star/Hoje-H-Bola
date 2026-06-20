@@ -468,28 +468,28 @@ function ExpandableRanking({ranked=[], mvpCounts={}, totalGames=0, currentPlayer
         const medal = i===0?"🥇":i===1?"🥈":i===2?"🥉":`${i+1}`;
 
         return (
-          <div key={p.id} style={{background:isMe?(dm?"#1a2e1a":"#f0fdf4"):(dm?"#111":"white"),border:isMe?"2px solid #16a34a":`1px solid ${dm?"#333":"#d1fae5"}`,borderRadius:12,overflow:"hidden",transition:"all 0.2s"}}>
+          <div key={p.id} style={{background:isMe?"#16241c":"#13201a",border:isMe?"2px solid #16a34a":"1px solid #23362a",borderRadius:12,overflow:"hidden",transition:"all 0.2s"}}>
             {/* Closed row */}
             <div style={{display:"flex",alignItems:"center",gap:8,padding:"10px 12px",cursor:"pointer"}} onClick={()=>setExpandedId(isOpen?null:p.id)}>
-              <span style={{fontSize:12,fontWeight:800,color:i===0?"#d97706":i===1?"#94a3b8":i===2?"#b45309":"#9ca3af",width:18,flexShrink:0}}>{medal}</span>
+              <span style={{fontSize:12,fontWeight:800,color:i===0?"#fbbf24":i===1?"#cbd5e1":i===2?"#d97706":"#6b7d70",width:18,flexShrink:0}}>{medal}</span>
               <Avatar player={p} size={28}/>
               <div style={{flex:1,minWidth:0}}>
                 <div style={{fontSize:13,fontWeight:700,color:"white"}}>{p.name}{isMe?" (tu)":""}</div>
-                <div style={{fontSize:10,color:"#6b7280",display:"flex",gap:8,marginTop:2}}>
+                <div style={{fontSize:10,color:"#8ba593",display:"flex",gap:8,marginTop:2}}>
                   <span>⚽ {p.total_games||0}</span>
                   {mvps>0&&<span>⭐ {mvps}</span>}
                   <span>📈 {pPct}%</span>
                 </div>
               </div>
               <div style={{display:"flex",alignItems:"center",gap:6,flexShrink:0}}>
-                {(p.current_streak||0)>1&&<span style={{fontSize:10,color:"#dc2626",fontWeight:700}}>🔥{p.current_streak}</span>}
-                <span style={{fontSize:11,color:"#6b7280"}}>{isOpen?"▲":"▼"}</span>
+                {(p.current_streak||0)>1&&<span style={{fontSize:10,color:"#f87171",fontWeight:700}}>🔥{p.current_streak}</span>}
+                <span style={{fontSize:11,color:"#8ba593"}}>{isOpen?"▲":"▼"}</span>
               </div>
             </div>
 
             {/* Progress bar always visible */}
             <div style={{height:3,background:"#1a2218",margin:"0 12px 8px 50px",borderRadius:99,overflow:"hidden"}}>
-              <div style={{width:`${pctBar}%`,height:"100%",background:"linear-gradient(90deg,#16a34a,#4ade80)",borderRadius:99}}/>
+              <div style={{width:`${pctBar}%`,height:"100%",background:"linear-gradient(90deg,#16a34a,#d4af37)",borderRadius:99}}/>
             </div>
 
             {/* Expanded content */}
