@@ -699,7 +699,7 @@ function ExpandableList({confirmed}) {
 }
 
 // ── FIELD HEADER ─────────────────────────────────────────────────────────────
-function FieldHeader({gameInfo,cdStr,confirmed,notYet,waiting,viewingDate,setViewingDate,historyGame,isViewingHistory,effectiveDate,darkMode,setDarkMode,extraRight}) {
+function FieldHeader({gameInfo,cdStr,confirmed,notYet,waiting,viewingDate,setViewingDate,historyGame,isViewingHistory,effectiveDate,darkMode,setDarkMode,extraRight,isLoggedIn=true}) {
   const pct=Math.round((confirmed.length/MAX_PLAYERS)*100);
   const canFwd=viewingDate&&viewingDate<gameInfo.date;
   return (
@@ -748,7 +748,7 @@ function FieldHeader({gameInfo,cdStr,confirmed,notYet,waiting,viewingDate,setVie
               {notYet&&notYet.length>0&&<span className="pct-label muted">? {notYet.length}</span>}
               {waiting.length>0&&<span className="pct-label yellow">⏳ {waiting.length}</span>}
             </div>
-            {confirmed.length>0&&<ExpandableList confirmed={confirmed}/>}
+            {confirmed.length>0&&isLoggedIn&&<ExpandableList confirmed={confirmed}/>}
           </>
         )}
       </div>
@@ -777,7 +777,7 @@ function LoginView({gameInfo,cdStr,confirmed,notYet,waiting,members,viewingDate,
   };
   return (
     <div className="screen">
-      <FieldHeader {...{gameInfo,cdStr,confirmed,notYet,waiting,viewingDate,setViewingDate,historyGame,isViewingHistory,effectiveDate,darkMode,setDarkMode}}/>
+      <FieldHeader {...{gameInfo,cdStr,confirmed,notYet,waiting,viewingDate,setViewingDate,historyGame,isViewingHistory,effectiveDate,darkMode,setDarkMode}} isLoggedIn={false}/>
       <div className="body">
         {!isViewingHistory&&<>
           <div className="pw-box" style={{marginTop:20}}>
