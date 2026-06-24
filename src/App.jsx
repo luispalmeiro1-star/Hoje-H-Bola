@@ -446,8 +446,8 @@ export default function App() {
       <style>{getCss(dm)}</style>
       {toast&&<div className={`toast toast-${toast.type}`}>{toast.msg}</div>}
       {view==="login"   && <LoginView   {...shared} onLogin={handleLogin} showToast={showToast}/>}
-      {view==="player"  && liveUser && <PlayerView  {...shared} player={liveUser} onToggle={()=>togglePresence(liveUser.id)} onAddGuest={n=>addGuest(n,liveUser.id)} onRemoveGuest={removeGuest} onUpdateProfile={(name,pw,color,phone)=>updateProfile(liveUser.id,name,pw,color,phone)} onVoteMvp={(vid)=>voteForMvp(liveUser.id,vid)} onSendMessage={(t)=>sendMessage(t,liveUser.id,liveUser.name)} onUpdatePosition={(pos)=>updatePosition(liveUser.id,pos)} onLogout={switchAccount} setView={setView}/>}
-      {view==="admin"   && liveUser && <AdminView   {...shared} currentUser={liveUser} adminTab={adminTab} setAdminTab={setAdminTab} onTogglePaid={togglePaid} onRemovePlayer={removePlayer} onAddPlayer={addPlayer} onChangePassword={changePassword} onResetGame={resetGame} onTogglePresence={togglePresence} onAddGuest={n=>addGuest(n,liveUser.id)} onRemoveGuest={removeGuest} onUpdateGameInfo={updateGameInfo} onUpdateProfile={(name,pw,color,phone)=>updateProfile(liveUser.id,name,pw,color,phone)} onAddDebt={addDebt} onPayDebt={payDebt} onClearHistory={clearAllHistory} onSendPush={sendPushNotification} onReassignTeams={reassignAllTeams} onSendMessage={(t)=>sendMessage(t,liveUser.id,liveUser.name)} onVoteMvp={(vid)=>voteForMvp(liveUser.id,vid)} onLogout={switchAccount} showToast={showToast} setView={setView}/>}
+      {view==="player"  && liveUser && <PlayerView  {...shared} view={view} player={liveUser} onToggle={()=>togglePresence(liveUser.id)} onAddGuest={n=>addGuest(n,liveUser.id)} onRemoveGuest={removeGuest} onUpdateProfile={(name,pw,color,phone)=>updateProfile(liveUser.id,name,pw,color,phone)} onVoteMvp={(vid)=>voteForMvp(liveUser.id,vid)} onSendMessage={(t)=>sendMessage(t,liveUser.id,liveUser.name)} onUpdatePosition={(pos)=>updatePosition(liveUser.id,pos)} onLogout={switchAccount} setView={setView}/>}
+      {view==="admin"   && liveUser && <AdminView   {...shared} view={view} currentUser={liveUser} adminTab={adminTab} setAdminTab={setAdminTab} onTogglePaid={togglePaid} onRemovePlayer={removePlayer} onAddPlayer={addPlayer} onChangePassword={changePassword} onResetGame={resetGame} onTogglePresence={togglePresence} onAddGuest={n=>addGuest(n,liveUser.id)} onRemoveGuest={removeGuest} onUpdateGameInfo={updateGameInfo} onUpdateProfile={(name,pw,color,phone)=>updateProfile(liveUser.id,name,pw,color,phone)} onAddDebt={addDebt} onPayDebt={payDebt} onClearHistory={clearAllHistory} onSendPush={sendPushNotification} onReassignTeams={reassignAllTeams} onSendMessage={(t)=>sendMessage(t,liveUser.id,liveUser.name)} onVoteMvp={(vid)=>voteForMvp(liveUser.id,vid)} onLogout={switchAccount} showToast={showToast} setView={setView}/>}
       {view==="debts"   && liveUser && <DebtsView {...shared} player={liveUser} onBack={()=>setView(liveUser.is_admin?"admin":"player")}/> }
       {view==="stats"   && liveUser && <StatsView   {...shared} player={liveUser} onBack={()=>setView(liveUser.is_admin?"admin":"player")}/>}
       {view==="chat"    && liveUser && <ChatView    {...shared} player={liveUser} onSendMessage={(t)=>sendMessage(t,liveUser.id,liveUser.name)} onBack={()=>setView(liveUser.is_admin?"admin":"player")}/>}
@@ -602,7 +602,7 @@ function HallOfFameMVP({history=[], members=[]}) {
               {pl?<Avatar player={pl} size={28}/>:<div style={{width:28,height:28,borderRadius:"50%",background:"#d1fae5",display:"flex",alignItems:"center",justifyContent:"center",fontSize:12,fontWeight:800,color:"#16a34a"}}>{name[0]}</div>}
               <div style={{flex:1}}>
                 <div style={{fontSize:13,fontWeight:700,color:"white"}}>{name}</div>
-                <div style={{height:4,background:"#f0fdf4",borderRadius:99,marginTop:4,overflow:"hidden"}}>
+                <div style={{height:4,background:"#0f1a0f",borderRadius:99,marginTop:4,overflow:"hidden"}}>
                   <div style={{width:`${(count/max)*100}%`,height:"100%",background:"linear-gradient(90deg,#d97706,#fbbf24)",borderRadius:99}}/>
                 </div>
               </div>
@@ -989,7 +989,7 @@ function AutoTeamsDisplay({confirmed, players=[]}) {
   const subs = groups["SUB"] || [];
 
   if(activeTeams.length === 0) return (
-    <div style={{background:"#f0fdf4",borderRadius:12,padding:"12px",textAlign:"center",fontSize:13,color:"#6b7280"}}>
+    <div style={{background:"#0f1a0f",borderRadius:12,padding:"12px",textAlign:"center",fontSize:13,color:"#6b7280"}}>
       As equipas formam-se automaticamente quando os jogadores confirmam presença.
     </div>
   );
@@ -1083,7 +1083,7 @@ function MvpVote({confirmed=[],mvpVotes=[],currentUserId,gameDate,onVote}) {
               <Avatar player={p} size={28}/>
               <span style={{flex:1,fontSize:13,fontWeight:700,color:"white"}}>{p.name}</span>
               <div style={{display:"flex",alignItems:"center",gap:6}}>
-                <div style={{width:60,height:6,background:"#f0fdf4",borderRadius:99,overflow:"hidden"}}>
+                <div style={{width:60,height:6,background:"#0f1a0f",borderRadius:99,overflow:"hidden"}}>
                   <div style={{width:`${(votes/maxVotes)*100}%`,height:"100%",background:"#d97706",borderRadius:99}}/>
                 </div>
                 <span style={{fontSize:11,fontWeight:800,color:"#d97706",width:14}}>{votes}</span>
@@ -1397,7 +1397,7 @@ function ProfileView({player,darkMode,onUpdateProfile,onBack,onLogout,onSwitchAc
 }
 
 // ── PLAYER VIEW ──────────────────────────────────────────────────────────────
-function PlayerView({gameInfo,cdStr,confirmed,waiting,notYet,guests,spotsLeft,players,members,debts,messages,mvpVotes,history,piggybank,viewingDate,setViewingDate,historyGame,isViewingHistory,effectiveDate,darkMode,setDarkMode,player,onToggle,onAddGuest,onRemoveGuest,onUpdateProfile,onVoteMvp,onSendMessage,onUpdatePosition,onLogout,setView}) {
+function PlayerView({gameInfo,cdStr,confirmed,waiting,notYet,guests,spotsLeft,players,members,debts,messages,mvpVotes,history,piggybank,viewingDate,setViewingDate,historyGame,isViewingHistory,effectiveDate,darkMode,setDarkMode,player,onToggle,onAddGuest,onRemoveGuest,onUpdateProfile,onVoteMvp,onSendMessage,onUpdatePosition,onLogout,setView,view}) {
   const isIn=player.status==="in", isWait=player.status==="wait";
   const [confirming, setConfirming]=useState(false);
   const handleToggle=async()=>{setConfirming(true);await onToggle();setTimeout(()=>setConfirming(false),600);};
@@ -1521,7 +1521,7 @@ function PlayerView({gameInfo,cdStr,confirmed,waiting,notYet,guests,spotsLeft,pl
 }
 
 // ── ADMIN VIEW ───────────────────────────────────────────────────────────────
-function AdminView({gameInfo,cdStr,confirmed,waiting,notYet,guests,spotsLeft,players,members,history,piggybank,debts,messages,mvpVotes,viewingDate,setViewingDate,historyGame,isViewingHistory,effectiveDate,darkMode,setDarkMode,currentUser,adminTab,setAdminTab,onTogglePaid,onRemovePlayer,onAddPlayer,onChangePassword,onResetGame,onTogglePresence,onAddGuest,onRemoveGuest,onUpdateGameInfo,onUpdateProfile,onAddDebt,onPayDebt,onClearHistory,onSendPush,onReassignTeams,onSendMessage,onVoteMvp,onLogout,showToast,setView}) {
+function AdminView({gameInfo,cdStr,confirmed,waiting,notYet,guests,spotsLeft,players,members,history,piggybank,debts,messages,mvpVotes,viewingDate,setViewingDate,historyGame,isViewingHistory,effectiveDate,darkMode,setDarkMode,currentUser,adminTab,setAdminTab,onTogglePaid,onRemovePlayer,onAddPlayer,onChangePassword,onResetGame,onTogglePresence,onAddGuest,onRemoveGuest,onUpdateGameInfo,onUpdateProfile,onAddDebt,onPayDebt,onClearHistory,onSendPush,onReassignTeams,onSendMessage,onVoteMvp,onLogout,showToast,setView,view}) {
   const [newName,setNewName]=useState("");
   const [newUsername,setNewUsername]=useState("");
   const [newPhone,setNewPhone]=useState("");
@@ -1619,7 +1619,7 @@ function AdminView({gameInfo,cdStr,confirmed,waiting,notYet,guests,spotsLeft,pla
           {confirmed.length<MIN_PLAYERS
             ?<div className="guest-locked">⚠️ Precisas de {MIN_PLAYERS} confirmados. ({confirmed.length}/{MIN_PLAYERS})</div>
             :<>
-              <div style={{background:"#f0fdf4",borderRadius:10,padding:"8px 12px",marginBottom:10,fontSize:12,color:"#166534",fontWeight:600}}>
+              <div style={{background:"#0f1a0f",borderRadius:10,padding:"8px 12px",marginBottom:10,fontSize:12,color:"#4ade80",fontWeight:600}}>
                 {confirmed.length>=15?"🏆 3 equipas de 5":`⚽ 2 equipas${confirmed.length%2!==0?" + suplentes":""}`}
               </div>
               <TeamsReveal confirmed={confirmed} players={players} onReassign={onReassignTeams}/>
