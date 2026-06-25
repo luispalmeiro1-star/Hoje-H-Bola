@@ -173,21 +173,60 @@ export default function App() {
 
   useEffect(()=>{ if(!viewingDate){setHistoryGame(null);return;} setHistoryGame(history.find(h=>h.date===viewingDate)||null); },[viewingDate,history]);
 
-  // Fecho automático 3h30 após o jogo
+  // Fecho automático 3h30 após o jogo — vai buscar dados frescos ao Supabase
   useEffect(()=>{
     if(!gameInfo.date||!gameInfo.time||!currentUser) return;
     const [gy,gm,gd]=gameInfo.date.split("-").map(Number);
     const [gh,gmin]=gameInfo.time.split(":").map(Number);
     const gameEnd=new Date(gy,gm-1,gd,gh,gmin);
     gameEnd.setMinutes(gameEnd.getMinutes()+210); // +3h30
-    const now=new Date();
-    const msUntilClose=gameEnd-now;
-    if(msUntilClose<=0) return; // já passou, não faz nada (evita fechar no reload)
-    const timer=setTimeout(()=>{
-      resetGame(null, true); // isAuto=true, winnerTeam=null
+    const msUntilClose=gameEnd-new Date();
+    if(msUntilClose<=0) return; // já passou, não agenda
+    const groupId=currentUser.group_id||null;
+    const gDate=gameInfo.date;
+    const gCost=gameInfo.cost_per_player||COST;
+    const gId=gameInfo.id||1;
+    const timer=setTimeout(async()=>{
+      // Buscar dados frescos directamente do Supabase
+      const{data:freshPlayers}=await supabase.from("players").select("*").eq(groupId?"group_id":"is_guest",groupId||false);
+      if(!freshPlayers) return;
+      const freshConfirmed=freshPlayers.filter(p=>p.status==="in");
+      const freshMembers=freshPlayers.filter(p=>!p.is_guest);
+      // Dívidas para quem não pagou
+      for(const p of freshConfirmed.filter(p=>!p.paid&&!p.is_guest))
+        await supabase.from("debts").insert({player_id:p.id,player_name:p.name,amount:gCost,description:`Jogo de ${gDate}`,group_id:groupId});
+      // Presenças
+      for(const p of freshConfirmed.filter(p=>!p.is_guest))
+        await supabase.from("game_attendance").insert({game_date:gDate,player_id:p.id,player_name:p.name,group_id:groupId});
+      // Estatísticas
+      for(const p of freshConfirmed.filter(p=>!p.is_guest)){
+        const ns=(p.current_streak||0)+1;
+        await supabase.from("players").update({total_games:(p.total_games||0)+1,total_paid:(p.total_paid||0)+(p.paid?gCost:0),current_streak:ns,best_streak:Math.max(p.best_streak||0,ns)}).eq("id",p.id);
+      }
+      for(const p of freshMembers.filter(m=>!freshConfirmed.find(c=>c.id===m.id)))
+        await supabase.from("players").update({current_streak:0}).eq("id",p.id);
+      // MVP por votos
+      const{data:votes}=await supabase.from("mvp_votes").select("*").eq("game_date",gDate);
+      let mvpName=null;
+      if(votes&&votes.length>0){const counts={};votes.forEach(v=>{counts[v.voted_for_id]=(counts[v.voted_for_id]||0)+1;});const topId=Object.keys(counts).sort((a,b)=>counts[b]-counts[a])[0];mvpName=freshPlayers.find(p=>p.id===Number(topId))?.name||null;}
+      // Histórico (winner_team null — admin decide depois)
+      const collected=freshConfirmed.filter(p=>p.paid).length*gCost;
+      if(collected>0||freshConfirmed.length>0) await supabase.from("game_history").insert({date:gDate,players_count:freshConfirmed.length,collected,winner_team:null,mvp_name:mvpName,group_id:groupId});
+      // Limpar presenças
+      await supabase.from("players").delete().eq("is_guest",true);
+      if(groupId) await supabase.from("players").update({status:"out",paid:false,confirmed_at:null,team:null}).eq("is_guest",false).eq("group_id",groupId);
+      else await supabase.from("players").update({status:"out",paid:false,confirmed_at:null,team:null}).eq("is_guest",false);
+      // Próxima data
+      const{data:grp}=groupId?await supabase.from("groups").select("game_days").eq("id",groupId).single():{data:null};
+      const gameDays=(grp?.game_days||[3]).map(Number).sort((a,b)=>a-b);
+      const now2=new Date(); let nextDate=null;
+      for(let i=1;i<=14;i++){const d=new Date(now2);d.setDate(now2.getDate()+i);if(gameDays.includes(d.getDay())){nextDate=d.toISOString().split("T")[0];break;}}
+      if(!nextDate){const fb=new Date(now2);fb.setDate(now2.getDate()+7);nextDate=fb.toISOString().split("T")[0];}
+      await supabase.from("game_info").update({date:nextDate}).eq("id",gId);
+      await reloadAll(groupId);
     }, msUntilClose);
     return ()=>clearTimeout(timer);
-  },[gameInfo.date, gameInfo.time, currentUser]);
+  },[gameInfo.date, gameInfo.time, currentUser?.id]);
 
   useEffect(()=>{
     if(loading||currentUser||players.length===0) return;
@@ -1720,32 +1759,7 @@ function getCss() {
 body{background:#0a0a0a;font-family:'DM Sans',sans-serif;color:#f0f0f0;min-height:100vh;}
 .screen{min-height:100vh;display:flex;flex-direction:column;max-width:480px;margin:0 auto;}
 .spinner{width:36px;height:36px;border:4px solid rgba(255,255,255,0.3);border-top-color:white;border-radius:50%;animation:spin 0.8s linear infinite;}
-.field-header{position:relative;overflow:hidden;background:linear-gradient(160deg,#1a4d2e 0%,#0f3320 60%,#0a2618 100%);padding:16px 16px 14px;border-bottom:2px solid #d4af37;}
-.field-lines{position:absolute;inset:0;pointer-events:none;}
-.fl{position:absolute;border:1.5px solid rgba(255,255,255,0.08);}
-.fl-cc{width:100px;height:100px;border-radius:50%;top:50%;left:50%;transform:translate(-50%,-50%);}
-.fl-cl{top:0;bottom:0;left:50%;width:0;border-left:1.5px solid rgba(255,255,255,0.08);}
-.fl-lb{top:15%;bottom:15%;left:-20px;width:65px;border-radius:0 8px 8px 0;}
-.fl-rb{top:15%;bottom:15%;right:-20px;width:65px;border-radius:8px 0 0 8px;}
-.field-content{position:relative;z-index:1;}
-.field-badge{display:flex;align-items:center;gap:7px;}
-.field-badge-name{font-family:'Bebas Neue',cursive;font-size:18px;letter-spacing:1.5px;color:white;}
-.field-nav-btn{background:rgba(0,0,0,0.3);border:none;border-radius:8px;padding:5px 7px;color:white;cursor:pointer;display:flex;align-items:center;font-family:'DM Sans',sans-serif;}
-.field-nav-btn:hover{background:rgba(0,0,0,0.5);}
-.field-date{font-size:11px;color:rgba(255,255,255,0.75);text-transform:capitalize;margin:4px 0;}
-.field-timeloc{display:flex;flex-wrap:wrap;gap:4px;margin-bottom:5px;}
-.field-chip{display:inline-flex;align-items:center;gap:3px;background:rgba(0,0,0,0.3);border-radius:20px;padding:2px 8px;font-size:10px;color:rgba(255,255,255,0.85);font-weight:600;max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
-.field-cd{font-family:'Bebas Neue',cursive;font-size:12px;color:#d4af37;background:rgba(0,0,0,0.3);border-radius:20px;padding:2px 9px;}
-.score-block{display:flex;flex-direction:column;align-items:center;}
-.score-num{font-family:'Bebas Neue',cursive;font-size:38px;line-height:1;}
-.score-num.green{color:#4ade80;}.score-num.white{color:white;}
-.score-label{font-size:8px;font-weight:700;letter-spacing:1.5px;color:rgba(255,255,255,0.45);margin-top:1px;}
-.score-sep{font-family:'Bebas Neue',cursive;font-size:22px;color:rgba(255,255,255,0.3);}
-.pct-bar{height:4px;background:rgba(255,255,255,0.15);border-radius:99px;overflow:hidden;margin-bottom:4px;}
-.pct-fill{height:100%;background:linear-gradient(90deg,#4ade80,#d4af37);border-radius:99px;transition:width .6s;}
-.pct-row{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:5px;}
-.pct-label{font-size:10px;font-weight:700;}
-.pct-label.green{color:#4ade80;}.pct-label.muted{color:rgba(255,255,255,0.4);}.pct-label.yellow{color:#fbbf24;}
+
 .body{flex:1;background:#0a0a0a;color:#f0f0f0;padding:16px 16px 48px;}
 .topbar{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;}
 .topbar-name{font-size:14px;color:#4ade80;font-weight:700;}
