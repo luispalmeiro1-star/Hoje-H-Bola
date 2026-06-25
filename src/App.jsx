@@ -33,11 +33,6 @@ function formatDisplayDate(dateStr) {
   const [y,m,d] = dateStr.split("-").map(Number);
   return new Date(y,m-1,d).toLocaleDateString("pt-PT",{weekday:"long",day:"numeric",month:"long"});
 }
-function formatShortDate(dateStr) {
-  if (!dateStr) return "";
-  const [y,m,d] = dateStr.split("-").map(Number);
-  return new Date(y,m-1,d).toLocaleDateString("pt-PT",{day:"numeric",month:"short"});
-}
 function formatTime(ts) {
   if(!ts) return "";
   return new Date(ts).toLocaleTimeString("pt-PT",{hour:"2-digit",minute:"2-digit"});
@@ -63,22 +58,7 @@ function shuffle(arr) {
   for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}
   return a;
 }
-function makeTeams(confirmed, players=[]) {
-  const n = confirmed.length;
-  const numTeams = n >= 15 ? 3 : 2;
-  const enriched = confirmed.map(p => ({...p, position: players.find(pl=>pl.id===p.id)?.position||"Polivalente"}));
-  const grs = shuffle(enriched.filter(p=>p.position==="GR"));
-  const pols = shuffle(enriched.filter(p=>p.position!=="GR"));
-  const teams = Array.from({length:numTeams},()=>[]);
-  grs.slice(0,numTeams).forEach((gr,i)=>teams[i].push(gr));
-  const rest = shuffle([...pols,...grs.slice(numTeams)]);
-  rest.forEach((p,i)=>teams[i%numTeams].push(p));
-  return teams;
-}
-function getAvatar(player) {
-  return player?.avatar_color || AVATAR_COLORS[0];
-}
-
+function getAvatar(player) { return player?.avatar_color || AVATAR_COLORS[0]; }
 function assignTeams(confirmed) {
   const n = confirmed.length;
   if (n === 0) return {};
@@ -97,17 +77,14 @@ function assignTeams(confirmed) {
   });
   const result = {};
   teams.forEach((team, ti) => {
-    const mainPlayers = team.slice(0, 5);
-    const subs = team.slice(5);
-    mainPlayers.forEach(p => { result[p.id] = teamNames[ti]; });
-    subs.forEach(p => { result[p.id] = "SUB"; });
+    team.slice(0, 5).forEach(p => { result[p.id] = teamNames[ti]; });
+    team.slice(5).forEach(p => { result[p.id] = "SUB"; });
   });
   return result;
 }
 
 const Icon = ({name,size=18}) => {
   const icons = {
-    ball:    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><path d="M12 2a10 10 0 0 1 6.88 2.75L12 12 5.12 4.75A10 10 0 0 1 12 2z"/><path d="M2.5 8.5l9.5 3.5 9.5-3.5"/><path d="M12 12v10"/></svg>,
     check:   <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="20 6 9 17 4 12"/></svg>,
     x:       <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>,
     plus:    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>,
@@ -124,8 +101,6 @@ const Icon = ({name,size=18}) => {
     edit:    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>,
     cal:     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>,
     euro:    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M4 10h12M4 14h12M19.5 9a6.5 6.5 0 1 0 0 6"/></svg>,
-    chart:   <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/><line x1="2" y1="20" x2="22" y2="20"/></svg>,
-    shuffle: <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="16 3 21 3 21 8"/><line x1="4" y1="20" x2="21" y2="3"/><polyline points="21 16 21 21 16 21"/><line x1="15" y1="15" x2="21" y2="21"/><line x1="4" y1="4" x2="9" y2="9"/></svg>,
     left:    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="15 18 9 12 15 6"/></svg>,
     right:   <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="9 18 15 12 9 6"/></svg>,
     warn:    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>,
@@ -133,9 +108,9 @@ const Icon = ({name,size=18}) => {
     chat:    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>,
     user:    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>,
     trophy:  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/><path d="M4 22h16"/><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"/><path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"/><path d="M18 2H6v7a6 6 0 0 0 12 0V2z"/></svg>,
-    sun:     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>,
-    moon:    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>,
     send:    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>,
+    share:   <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>,
+    copy:    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>,
   };
   return icons[name]||null;
 };
@@ -152,7 +127,7 @@ function Avatar({player={}, size=32, style={}}) {
 // ── APP ──────────────────────────────────────────────────────────────────────
 export default function App() {
   const [players, setPlayers]         = useState([]);
-  const [gameInfo, setGameInfo]       = useState({location:"Pavilhão Gimnodesportivo de Alcochete",date:nextWednesday(),time:"22:30",app_name:"Hoje Há Bola",cost_per_player:3});
+  const [gameInfo, setGameInfo]       = useState({location:"Pavilhão Gimnodesportivo de Alcochete",date:nextWednesday(),time:"22:30",app_name:"Hoje Há Jogo",cost_per_player:3});
   const [history, setHistory]         = useState([]);
   const [debts, setDebts]             = useState([]);
   const [messages, setMessages]       = useState([]);
@@ -163,76 +138,28 @@ export default function App() {
   const [toast, setToast]             = useState(null);
   const [adminTab, setAdminTab]       = useState("jogo");
   const [loading, setLoading]         = useState(true);
-  const [darkMode, setDarkMode]       = useState(() => localStorage.getItem("kickoff_dark")==="1");
   const [viewingDate, setViewingDate] = useState(null);
   const [historyGame, setHistoryGame] = useState(null);
+  const [attendance, setAttendance]   = useState([]);
   const isViewingHistory = !!viewingDate;
   const effectiveDate = viewingDate || gameInfo.date;
 
-  const showToast = (msg,type="ok") => {setToast({msg,type});setTimeout(()=>setToast(null),3000);};
+  const showToast = (msg,type="ok") => { setToast({msg,type}); setTimeout(()=>setToast(null),3000); };
 
-  // ── LOAD FUNCTIONS (filtradas por group_id quando disponível) ────────────
-  const loadPlayers  = useCallback(async(groupId=null)=>{
-    let q = supabase.from("players").select("*").order("id");
-    if(groupId) q = q.eq("group_id", groupId);
-    const{data}=await q;
-    if(data)setPlayers(data);
-  },[]);
+  const loadPlayers    = useCallback(async(gid=null)=>{ let q=supabase.from("players").select("*").order("id"); if(gid) q=q.eq("group_id",gid); const{data}=await q; if(data)setPlayers(data); },[]);
+  const loadGameInfo   = useCallback(async(gid=null)=>{ let q=supabase.from("game_info").select("*"); if(gid){q=q.eq("group_id",gid).limit(1).single();}else{q=q.eq("id",1).single();} const{data}=await q; if(data)setGameInfo(data); },[]);
+  const loadHistory    = useCallback(async(gid=null)=>{ let q=supabase.from("game_history").select("*").order("date",{ascending:false}); if(gid) q=q.eq("group_id",gid); const{data}=await q; if(data){setHistory(data);setPiggybank(data.reduce((s,g)=>s+(Number(g.collected)||0)-(g.players_count>0?RENT:0),0));} },[]);
+  const loadDebts      = useCallback(async(gid=null)=>{ let q=supabase.from("debts").select("*").order("created_at"); if(gid) q=q.eq("group_id",gid); const{data}=await q; if(data)setDebts(data); },[]);
+  const loadMessages   = useCallback(async(gid=null)=>{ let q=supabase.from("chat_messages").select("*").order("created_at").limit(100); if(gid) q=q.eq("group_id",gid); const{data}=await q; if(data)setMessages(data); },[]);
+  const loadMvp        = useCallback(async(gid=null)=>{ let q=supabase.from("mvp_votes").select("*"); if(gid) q=q.eq("group_id",gid); const{data}=await q; if(data)setMvpVotes(data); },[]);
+  const loadAttendance = useCallback(async(gid=null)=>{ let q=supabase.from("game_attendance").select("*").order("game_date",{ascending:false}); if(gid) q=q.eq("group_id",gid); const{data}=await q; if(data)setAttendance(data); },[]);
 
-  const loadGameInfo = useCallback(async(groupId=null)=>{
-    let q = supabase.from("game_info").select("*");
-    if(groupId) {
-      q = q.eq("group_id", groupId).limit(1).single();
-    } else {
-      q = q.eq("id",1).single();
-    }
-    const{data}=await q;
-    if(data)setGameInfo(data);
-  },[]);
-
-  const loadHistory  = useCallback(async(groupId=null)=>{
-    let q = supabase.from("game_history").select("*").order("date",{ascending:false});
-    if(groupId) q = q.eq("group_id", groupId);
-    const{data}=await q;
-    if(data){setHistory(data);setPiggybank(data.reduce((s,g)=>s+(Number(g.collected)||0)-(g.players_count>0?RENT:0),0));}
-  },[]);
-
-  const loadDebts    = useCallback(async(groupId=null)=>{
-    let q = supabase.from("debts").select("*").order("created_at");
-    if(groupId) q = q.eq("group_id", groupId);
-    const{data}=await q;
-    if(data)setDebts(data);
-  },[]);
-
-  const loadMessages = useCallback(async(groupId=null)=>{
-    let q = supabase.from("chat_messages").select("*").order("created_at").limit(100);
-    if(groupId) q = q.eq("group_id", groupId);
-    const{data}=await q;
-    if(data)setMessages(data);
-  },[]);
-
-  const loadMvp      = useCallback(async(groupId=null)=>{
-    let q = supabase.from("mvp_votes").select("*");
-    if(groupId) q = q.eq("group_id", groupId);
-    const{data}=await q;
-    if(data)setMvpVotes(data);
-  },[]);
-
-  const [attendance, setAttendance] = useState([]);
-  const loadAttendance = useCallback(async(groupId=null)=>{
-    let q = supabase.from("game_attendance").select("*").order("game_date",{ascending:false});
-    if(groupId) q = q.eq("group_id", groupId);
-    const{data}=await q;
-    if(data)setAttendance(data);
-  },[]);
+  const reloadAll = useCallback(async(gid=null)=>{
+    await Promise.all([loadPlayers(gid),loadGameInfo(gid),loadHistory(gid),loadDebts(gid),loadMessages(gid),loadMvp(gid),loadAttendance(gid)]);
+  },[loadPlayers,loadGameInfo,loadHistory,loadDebts,loadMessages,loadMvp,loadAttendance]);
 
   useEffect(()=>{
-    (async()=>{
-      setLoading(true);
-      // Carregar sem filtro inicialmente — após login filtra por group_id
-      await Promise.all([loadPlayers(),loadGameInfo(),loadHistory(),loadDebts(),loadMessages(),loadMvp(),loadAttendance()]);
-      setLoading(false);
-    })();
+    (async()=>{ setLoading(true); await reloadAll(); setLoading(false); })();
     const subs=[
       supabase.channel("players_ch").on("postgres_changes",{event:"*",schema:"public",table:"players"},()=>loadPlayers()).subscribe(),
       supabase.channel("gameinfo_ch").on("postgres_changes",{event:"*",schema:"public",table:"game_info"},()=>loadGameInfo()).subscribe(),
@@ -242,41 +169,19 @@ export default function App() {
       supabase.channel("mvp_ch").on("postgres_changes",{event:"*",schema:"public",table:"mvp_votes"},()=>loadMvp()).subscribe(),
     ];
     return()=>subs.forEach(s=>supabase.removeChannel(s));
-  },[loadPlayers,loadGameInfo,loadHistory,loadDebts,loadMessages,loadMvp]);
+  },[]);
 
-  useEffect(()=>{
-    if(!viewingDate){setHistoryGame(null);return;}
-    setHistoryGame(history.find(h=>h.date===viewingDate)||null);
-  },[viewingDate,history]);
+  useEffect(()=>{ if(!viewingDate){setHistoryGame(null);return;} setHistoryGame(history.find(h=>h.date===viewingDate)||null); },[viewingDate,history]);
 
-  useEffect(()=>{localStorage.setItem("kickoff_dark",darkMode?"1":"0");},[darkMode]);
-
-  // ── RESTAURAR SESSÃO ─────────────────────────────────────────────────────
   useEffect(()=>{
     if(loading||currentUser||players.length===0) return;
     try{
       const saved=JSON.parse(localStorage.getItem("hhb_session"));
       if(saved?.playerId){
         const p=players.find(pl=>pl.id===saved.playerId);
-        if(p){
-          setCurrentUser(p);
-          setView(p.is_admin?"admin":"player");
-          // Se tiver group_id guardado, recarregar dados filtrados
-          if(saved.groupId){
-            loadPlayers(saved.groupId);
-            loadGameInfo(saved.groupId);
-            loadHistory(saved.groupId);
-            loadDebts(saved.groupId);
-            loadMessages(saved.groupId);
-            loadMvp(saved.groupId);
-            loadAttendance(saved.groupId);
-          }
-        } else {
-          setView("landing");
-        }
-      } else {
-        setView("landing");
-      }
+        if(p){ setCurrentUser(p); setView(p.is_admin?"admin":"player"); if(saved.groupId) reloadAll(saved.groupId); }
+        else setView("landing");
+      } else setView("landing");
     }catch(e){setView("landing");}
   },[loading,players]);
 
@@ -292,60 +197,32 @@ export default function App() {
     try{
       window.OneSignalDeferred = window.OneSignalDeferred || [];
       window.OneSignalDeferred.push(async function(OneSignal) {
-        try{
-          if(OneSignal.Notifications.permission !== true){
-            await OneSignal.Notifications.requestPermission();
-          }
-          if(OneSignal.Notifications.permission === true){
-            await OneSignal.User.addTag("player_id", String(playerId));
-          }
-        }catch(err){ console.log("OneSignal error:", err); }
+        try{ if(OneSignal.Notifications.permission!==true) await OneSignal.Notifications.requestPermission(); if(OneSignal.Notifications.permission===true) await OneSignal.User.addTag("player_id",String(playerId)); }catch(err){}
       });
     }catch(e){}
   };
 
-  // ── LOGIN — filtrar por group_id se disponível ───────────────────────────
-  const handleLogin = async(identifier, password, groupId=null)=>{
-    const clean = identifier.trim().toLowerCase();
-    let candidates = players.filter(p =>
-      p.username?.toLowerCase() === clean ||
-      p.phone?.replace(/\s+/g,"") === identifier.trim().replace(/\s+/g,"")
-    );
-    // Se tiver group_id, filtrar só jogadores desse grupo
-    if(groupId) candidates = candidates.filter(p => p.group_id === groupId);
-    const p = candidates.find(c => c.password === password);
+  const handleLogin = async(identifier,password,groupId=null)=>{
+    const clean=identifier.trim().toLowerCase();
+    let candidates=players.filter(p=>p.username?.toLowerCase()===clean||p.phone?.replace(/\s+/g,"")===identifier.trim().replace(/\s+/g,""));
+    if(groupId) candidates=candidates.filter(p=>p.group_id===groupId);
+    const p=candidates.find(c=>c.password===password);
     if(!p) return false;
-    setCurrentUser(p);
-    setView(p.is_admin?"admin":"player");
-    // Guardar group_id na sessão
-    localStorage.setItem("hhb_session", JSON.stringify({playerId:p.id, groupId: p.group_id||null}));
-    // Recarregar dados filtrados pelo grupo do jogador
-    if(p.group_id){
-      await Promise.all([
-        loadPlayers(p.group_id),
-        loadGameInfo(p.group_id),
-        loadHistory(p.group_id),
-        loadDebts(p.group_id),
-        loadMessages(p.group_id),
-        loadMvp(p.group_id),
-        loadAttendance(p.group_id),
-      ]);
-    }
+    setCurrentUser(p); setView(p.is_admin?"admin":"player");
+    localStorage.setItem("hhb_session",JSON.stringify({playerId:p.id,groupId:p.group_id||null}));
+    if(p.group_id) await reloadAll(p.group_id);
     linkOneSignal(p.id);
     return true;
   };
-
-  const handleLogout = ()=>{setCurrentUser(null);setView("login");setViewingDate(null);};
-  const switchAccount = ()=>{localStorage.removeItem("hhb_session");setCurrentUser(null);setView("landing");setViewingDate(null);};
+  const handleLogout  = ()=>{ setCurrentUser(null); setView("landing"); setViewingDate(null); };
+  const switchAccount = ()=>{ localStorage.removeItem("hhb_session"); setCurrentUser(null); setView("landing"); setViewingDate(null); };
 
   const reassignAllTeams = async(updatedPlayers) => {
-    const newConfirmed = updatedPlayers.filter(pl=>pl.status==="in");
-    const teamMap = assignTeams(newConfirmed);
-    const finalPlayers = updatedPlayers.map(pl=>({...pl, team: teamMap[pl.id]||null}));
+    const newConfirmed=updatedPlayers.filter(pl=>pl.status==="in");
+    const teamMap=assignTeams(newConfirmed);
+    const finalPlayers=updatedPlayers.map(pl=>({...pl,team:teamMap[pl.id]||null}));
     setPlayers(finalPlayers);
-    for(const pl of finalPlayers){
-      await supabase.from("players").update({team: teamMap[pl.id]||null}).eq("id",pl.id);
-    }
+    for(const pl of finalPlayers) await supabase.from("players").update({team:teamMap[pl.id]||null}).eq("id",pl.id);
     return finalPlayers;
   };
 
@@ -356,40 +233,30 @@ export default function App() {
     else if(confirmed.length<MAX_PLAYERS){ns="in";na=Date.now();}
     else{ns="wait";na=Date.now();showToast("Jogo cheio! ⏳","warn");}
     await supabase.from("players").update({status:ns,confirmed_at:na,paid:false}).eq("id",playerId);
-    const updated = players.map(pl=>pl.id===playerId?{...pl,status:ns,confirmed_at:na,paid:false}:pl);
-    await reassignAllTeams(updated);
+    await reassignAllTeams(players.map(pl=>pl.id===playerId?{...pl,status:ns,confirmed_at:na,paid:false}:pl));
   };
   const addGuest = async(guestName,invitedById)=>{
     if(!guestName.trim()) return;
     const inviter=players.find(p=>p.id===invitedById);
     if(!inviter||confirmed.length>=MAX_PLAYERS){showToast("Jogo cheio!","err");return;}
-    const {data:inserted} = await supabase.from("players").insert({name:guestName.trim(),is_admin:false,password:null,paid:false,status:"in",is_guest:true,invited_by:inviter.name,invited_by_id:invitedById,confirmed_at:Date.now(),group_id:inviter.group_id||null}).select().single();
-    if(inserted){
-      const updated = [...players, inserted];
-      await reassignAllTeams(updated);
-    }
+    const{data:inserted}=await supabase.from("players").insert({name:guestName.trim(),is_admin:false,password:null,paid:false,status:"in",is_guest:true,invited_by:inviter.name,invited_by_id:invitedById,confirmed_at:Date.now(),group_id:inviter.group_id||null}).select().single();
+    if(inserted) await reassignAllTeams([...players,inserted]);
     showToast(`${guestName} adicionado! 🎉`);
   };
-  const removeGuest    = async(id)=>{
-    await supabase.from("players").delete().eq("id",id);
-    const updated = players.filter(p=>p.id!==id);
-    await reassignAllTeams(updated);
-    showToast("Convidado removido");
-  };
-  const togglePaid     = async(id)=>{const p=players.find(pl=>pl.id===id);setPlayers(prev=>prev.map(pl=>pl.id===id?{...pl,paid:!p.paid}:pl));await supabase.from("players").update({paid:!p.paid}).eq("id",id);showToast("Pagamento atualizado ✓");};
-  const removePlayer   = async(id)=>{setPlayers(prev=>prev.filter(p=>p.id!==id));await supabase.from("players").delete().eq("id",id);showToast("Jogador removido");};
-  const changePassword = async(id,pw)=>{await supabase.from("players").update({password:pw}).eq("id",id);};
+  const removeGuest    = async(id)=>{ await supabase.from("players").delete().eq("id",id); await reassignAllTeams(players.filter(p=>p.id!==id)); showToast("Convidado removido"); };
+  const togglePaid     = async(id)=>{ const p=players.find(pl=>pl.id===id); setPlayers(prev=>prev.map(pl=>pl.id===id?{...pl,paid:!p.paid}:pl)); await supabase.from("players").update({paid:!p.paid}).eq("id",id); showToast("Pagamento atualizado ✓"); };
+  const removePlayer   = async(id)=>{ setPlayers(prev=>prev.filter(p=>p.id!==id)); await supabase.from("players").delete().eq("id",id); showToast("Jogador removido"); };
+  const changePassword = async(id,pw)=>{ await supabase.from("players").update({password:pw}).eq("id",id); };
   const addPlayer      = async(name,username,password,phone)=>{
     if(!name.trim()||!username.trim()||!password.trim()) return;
     const color=AVATAR_COLORS[Math.floor(Math.random()*AVATAR_COLORS.length)];
     const cleanUsername=username.trim().toLowerCase().replace(/\s+/g,"");
     if(players.find(p=>p.username?.toLowerCase()===cleanUsername)){showToast("Esse utilizador já existe!","err");return;}
-    const groupId = currentUser?.group_id || null;
-    setPlayers(prev=>[...prev,{id:Date.now(),name:name.trim(),username:cleanUsername,phone:phone?.trim()||null,is_admin:false,password:password.trim(),paid:false,status:"out",is_guest:false,invited_by:null,invited_by_id:null,confirmed_at:null,avatar_color:color,position:"Polivalente",total_games:0,total_paid:0,group_id:groupId}]);
-    await supabase.from("players").insert({name:name.trim(),username:cleanUsername,phone:phone?.trim()||null,is_admin:false,password:password.trim(),paid:false,status:"out",is_guest:false,invited_by:null,invited_by_id:null,confirmed_at:null,avatar_color:color,group_id:groupId});
+    const groupId=currentUser?.group_id||null;
+    await supabase.from("players").insert({name:name.trim(),username:cleanUsername,phone:phone?.trim()||null,is_admin:false,password:password.trim(),paid:false,status:"out",is_guest:false,avatar_color:color,group_id:groupId});
     showToast(`${name} adicionado! 🎉`);
   };
-  const updateGameInfo = async(patch)=>{setGameInfo(prev=>({...prev,...patch}));await supabase.from("game_info").update(patch).eq("id",gameInfo.id||1);showToast("Jogo atualizado ✓");};
+  const updateGameInfo = async(patch)=>{ setGameInfo(prev=>({...prev,...patch})); await supabase.from("game_info").update(patch).eq("id",gameInfo.id||1); showToast("Jogo atualizado ✓"); };
   const updateProfile  = async(id,newName,newPassword,newColor,newPhone)=>{
     const updates={};
     if(newName?.trim()) updates.name=newName.trim();
@@ -401,129 +268,85 @@ export default function App() {
     await supabase.from("players").update(updates).eq("id",id);
     showToast("Perfil atualizado ✓");
   };
-  const updatePosition = async(id, pos) => {
-    await supabase.from("players").update({position: pos}).eq("id", id);
-    const updated = players.map(p=>p.id===id?{...p,position:pos}:p);
-    await reassignAllTeams(updated);
+  const updatePosition = async(id,pos)=>{
+    await supabase.from("players").update({position:pos}).eq("id",id);
+    await reassignAllTeams(players.map(p=>p.id===id?{...p,position:pos}:p));
     showToast("Posição atualizada ✓");
   };
-  const sendPushNotification = async(title, message) => {
-    try {
-      await supabase.functions.invoke("send-notification", {
-        body: { title, message, url: "https://hojehajogo.pt" }
-      });
-    } catch(e) { console.log("Push notification error:", e); }
+  const sendPushNotification = async(title,message)=>{
+    try{ await supabase.functions.invoke("send-notification",{body:{title,message,url:"https://hojehajogo.pt"}}); }catch(e){}
   };
-
   const resetGame = async(winnerTeam)=>{
-    const paidCount=confirmed.filter(p=>p.paid).length;
     const gameCost=gameInfo.cost_per_player||COST;
-    const collected=paidCount*gameCost;
-    const unpaidMembers=confirmed.filter(p=>!p.paid&&!p.is_guest);
-    const groupId = currentUser?.group_id||null;
-    for(const p of unpaidMembers){
+    const collected=confirmed.filter(p=>p.paid).length*gameCost;
+    const groupId=currentUser?.group_id||null;
+    for(const p of confirmed.filter(p=>!p.paid&&!p.is_guest))
       await supabase.from("debts").insert({player_id:p.id,player_name:p.name,amount:gameCost,description:`Jogo de ${gameInfo.date}`,group_id:groupId});
-    }
     const confirmedMembers=confirmed.filter(p=>!p.is_guest);
-    for(const p of confirmedMembers){
+    for(const p of confirmedMembers)
       await supabase.from("game_attendance").insert({game_date:gameInfo.date,player_id:p.id,player_name:p.name,group_id:groupId});
-    }
     for(const p of confirmedMembers){
       const pl=players.find(m=>m.id===p.id);
-      if(pl){
-        const newStreak=(pl.current_streak||0)+1;
-        const newBest=Math.max(pl.best_streak||0,newStreak);
-        await supabase.from("players").update({
-          total_games:(pl.total_games||0)+1,
-          total_paid:(pl.total_paid||0)+(p.paid?gameCost:0),
-          current_streak:newStreak,
-          best_streak:newBest
-        }).eq("id",p.id);
-      }
+      if(pl){ const ns=(pl.current_streak||0)+1; await supabase.from("players").update({total_games:(pl.total_games||0)+1,total_paid:(pl.total_paid||0)+(p.paid?gameCost:0),current_streak:ns,best_streak:Math.max(pl.best_streak||0,ns)}).eq("id",p.id); }
     }
-    const didNotPlay=members.filter(m=>!confirmedMembers.find(c=>c.id===m.id));
-    for(const p of didNotPlay){
+    for(const p of members.filter(m=>!confirmedMembers.find(c=>c.id===m.id)))
       await supabase.from("players").update({current_streak:0}).eq("id",p.id);
-    }
     const votes=mvpVotes.filter(v=>v.game_date===gameInfo.date);
     let mvpName=null;
-    if(votes.length>0){
-      const counts={};
-      votes.forEach(v=>{counts[v.voted_for_id]=(counts[v.voted_for_id]||0)+1;});
-      const topId=Object.keys(counts).sort((a,b)=>counts[b]-counts[a])[0];
-      const mvpPlayer=players.find(p=>p.id===Number(topId));
-      mvpName=mvpPlayer?.name||null;
-    }
-    if(collected>0||confirmed.length>0){
-      await supabase.from("game_history").insert({date:gameInfo.date,players_count:confirmed.length,collected,winner_team:winnerTeam||null,mvp_name:mvpName,group_id:groupId});
-    }
+    if(votes.length>0){ const counts={}; votes.forEach(v=>{counts[v.voted_for_id]=(counts[v.voted_for_id]||0)+1;}); const topId=Object.keys(counts).sort((a,b)=>counts[b]-counts[a])[0]; mvpName=players.find(p=>p.id===Number(topId))?.name||null; }
+    if(collected>0||confirmed.length>0) await supabase.from("game_history").insert({date:gameInfo.date,players_count:confirmed.length,collected,winner_team:winnerTeam||null,mvp_name:mvpName,group_id:groupId});
     await supabase.from("players").delete().eq("is_guest",true);
     await supabase.from("players").update({status:"out",paid:false,confirmed_at:null,team:null}).eq("is_guest",false);
     showToast("Jogo fechado ✓");
   };
-  const addDebt  = async(playerId,playerName,amount,desc)=>{await supabase.from("debts").insert({player_id:playerId,player_name:playerName,amount,description:desc,group_id:currentUser?.group_id||null});showToast("Dívida registada ✓");};
+  const addDebt  = async(playerId,playerName,amount,desc)=>{ await supabase.from("debts").insert({player_id:playerId,player_name:playerName,amount,description:desc,group_id:currentUser?.group_id||null}); showToast("Dívida registada ✓"); };
   const payDebt  = async(debtId,amountPaid=null)=>{
-    const debt=debts.find(d=>d.id===debtId);
-    if(!debt) return;
-    const full = amountPaid===null || amountPaid>=Number(debt.amount);
-    const paidNow = full ? Number(debt.amount) : Number(amountPaid);
+    const debt=debts.find(d=>d.id===debtId); if(!debt) return;
+    const full=amountPaid===null||amountPaid>=Number(debt.amount);
+    const paidNow=full?Number(debt.amount):Number(amountPaid);
     await supabase.from("game_history").insert({date:gameInfo.date,players_count:0,collected:paidNow,winner_team:null,mvp_name:null,group_id:currentUser?.group_id||null});
-    if(full){
-      await supabase.from("debts").delete().eq("id",debtId);
-      showToast("Dívida paga ✓");
-    } else {
-      const remaining = Number(debt.amount)-Number(amountPaid);
-      await supabase.from("debts").update({amount:remaining}).eq("id",debtId);
-      showToast(`Pagamento parcial registado — restam ${remaining}€`);
-    }
+    if(full){ await supabase.from("debts").delete().eq("id",debtId); showToast("Dívida paga ✓"); }
+    else{ await supabase.from("debts").update({amount:Number(debt.amount)-Number(amountPaid)}).eq("id",debtId); showToast(`Pagamento parcial — restam ${Number(debt.amount)-Number(amountPaid)}€`); }
   };
-  const clearAllHistory = async()=>{
-    await supabase.from("game_history").delete().neq("id",0);
-    await supabase.from("debts").delete().neq("id",0);
-    showToast("Histórico e dívidas limpos ✓");
-  };
+  const clearAllHistory = async()=>{ await supabase.from("game_history").delete().neq("id",0); await supabase.from("debts").delete().neq("id",0); showToast("Histórico e dívidas limpos ✓"); };
   const sendMessage = async(text,playerId,playerName)=>{
     if(!text.trim()) return;
-    const tempMsg={id:Date.now(),player_id:playerId,player_name:playerName,message:text.trim(),created_at:new Date().toISOString()};
-    setMessages(prev=>[...prev,tempMsg]);
+    setMessages(prev=>[...prev,{id:Date.now(),player_id:playerId,player_name:playerName,message:text.trim(),created_at:new Date().toISOString()}]);
     await supabase.from("chat_messages").insert({player_id:playerId,player_name:playerName,message:text.trim(),group_id:currentUser?.group_id||null});
   };
   const voteForMvp = async(voterId,votedForId)=>{
-    setMvpVotes(prev=>{
-      const filtered=prev.filter(v=>!(v.voter_id===voterId&&v.game_date===gameInfo.date));
-      return [...filtered,{id:Date.now(),voter_id:voterId,voted_for_id:votedForId,game_date:gameInfo.date}];
-    });
+    setMvpVotes(prev=>[...prev.filter(v=>!(v.voter_id===voterId&&v.game_date===gameInfo.date)),{id:Date.now(),voter_id:voterId,voted_for_id:votedForId,game_date:gameInfo.date}]);
     await supabase.from("mvp_votes").upsert({voter_id:voterId,voted_for_id:votedForId,game_date:gameInfo.date,group_id:currentUser?.group_id||null},{onConflict:"voter_id,game_date"});
     showToast("Voto registado ✓");
   };
 
   const liveUser = currentUser ? players.find(p=>p.id===currentUser.id) : null;
   const effectiveCost = gameInfo.cost_per_player||COST;
-  const shared = {gameInfo,cdStr,confirmed,waiting,notYet,guests,spotsLeft,members,players,history,piggybank,debts,messages,mvpVotes,attendance,viewingDate,setViewingDate,historyGame,isViewingHistory,effectiveDate,darkMode,setDarkMode,effectiveCost};
+  const shared = {gameInfo,cdStr,confirmed,waiting,notYet,guests,spotsLeft,members,players,history,piggybank,debts,messages,mvpVotes,attendance,viewingDate,setViewingDate,historyGame,isViewingHistory,effectiveDate,effectiveCost};
 
   if(loading) return (
     <div style={{minHeight:"100vh",background:"#0a0a0a",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:16}}>
-      <style>{getCss(false)}</style>
+      <style>{getCss()}</style>
       <div style={{fontSize:48}}>⚽</div>
       <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:28,color:"white",letterSpacing:2}}>HOJE HÁ JOGO</div>
       <div className="spinner"/>
     </div>
   );
 
-  const dm = darkMode;
   return (
-    <div style={{background:dm?"#0a0f0a":"#0d1a0e",minHeight:"100vh"}}>
-      <style>{getCss(dm)}</style>
+    <div style={{background:"#0a0a0a",minHeight:"100vh"}}>
+      <style>{getCss()}</style>
       {toast&&<div className={`toast toast-${toast.type}`}>{toast.msg}</div>}
-      {view==="landing"      && <LandingView setView={setView} darkMode={darkMode}/>}
-      {view==="login"        && <LoginView onLogin={handleLogin} showToast={showToast} setView={setView} darkMode={darkMode}/>}
-      {view==="criar-grupo"  && <CriarGrupoView setView={setView} showToast={showToast} darkMode={darkMode} onLogin={handleLogin} players={players} reloadPlayers={loadPlayers}/>}
-      {view==="entrar-convite" && <EntrarConviteView setView={setView} onLogin={handleLogin} showToast={showToast} darkMode={darkMode} players={players}/>}
-      {view==="player"  && liveUser && <PlayerView  {...shared} view={view} player={liveUser} onToggle={()=>togglePresence(liveUser.id)} onAddGuest={n=>addGuest(n,liveUser.id)} onRemoveGuest={removeGuest} onUpdateProfile={(name,pw,color,phone)=>updateProfile(liveUser.id,name,pw,color,phone)} onVoteMvp={(vid)=>voteForMvp(liveUser.id,vid)} onSendMessage={(t)=>sendMessage(t,liveUser.id,liveUser.name)} onUpdatePosition={(pos)=>updatePosition(liveUser.id,pos)} onLogout={switchAccount} setView={setView}/>}
-      {view==="admin"   && liveUser && <AdminView   {...shared} view={view} currentUser={liveUser} adminTab={adminTab} setAdminTab={setAdminTab} onTogglePaid={togglePaid} onRemovePlayer={removePlayer} onAddPlayer={addPlayer} onChangePassword={changePassword} onResetGame={resetGame} onTogglePresence={togglePresence} onAddGuest={n=>addGuest(n,liveUser.id)} onRemoveGuest={removeGuest} onUpdateGameInfo={updateGameInfo} onUpdateProfile={(name,pw,color,phone)=>updateProfile(liveUser.id,name,pw,color,phone)} onAddDebt={addDebt} onPayDebt={payDebt} onClearHistory={clearAllHistory} onSendPush={sendPushNotification} onReassignTeams={reassignAllTeams} onSendMessage={(t)=>sendMessage(t,liveUser.id,liveUser.name)} onVoteMvp={(vid)=>voteForMvp(liveUser.id,vid)} onLogout={switchAccount} showToast={showToast} setView={setView}/>}
-      {view==="debts"   && liveUser && <DebtsView {...shared} player={liveUser} onBack={()=>setView(liveUser.is_admin?"admin":"player")}/> }
+      {view==="landing"        && <LandingView setView={setView}/>}
+      {view==="login"          && <LoginView onLogin={handleLogin} showToast={showToast} setView={setView}/>}
+      {view==="criar-grupo"    && <CriarGrupoView setView={setView} showToast={showToast} onLogin={handleLogin} reloadAll={reloadAll}/>}
+      {view==="entrar-convite" && <EntrarConviteView setView={setView} onLogin={handleLogin} showToast={showToast}/>}
+      {view==="criar-conta"    && <CriarContaView setView={setView} onLogin={handleLogin} showToast={showToast}/>}
+      {view==="player"  && liveUser && <PlayerView  {...shared} view={view} player={liveUser} onToggle={()=>togglePresence(liveUser.id)} onAddGuest={n=>addGuest(n,liveUser.id)} onRemoveGuest={removeGuest} onUpdateProfile={(name,pw,color,phone)=>updateProfile(liveUser.id,name,pw,color,phone)} onVoteMvp={vid=>voteForMvp(liveUser.id,vid)} onSendMessage={t=>sendMessage(t,liveUser.id,liveUser.name)} onUpdatePosition={pos=>updatePosition(liveUser.id,pos)} onLogout={switchAccount} setView={setView}/>}
+      {view==="admin"   && liveUser && <AdminView   {...shared} view={view} currentUser={liveUser} adminTab={adminTab} setAdminTab={setAdminTab} onTogglePaid={togglePaid} onRemovePlayer={removePlayer} onAddPlayer={addPlayer} onChangePassword={changePassword} onResetGame={resetGame} onTogglePresence={togglePresence} onAddGuest={n=>addGuest(n,liveUser.id)} onRemoveGuest={removeGuest} onUpdateGameInfo={updateGameInfo} onUpdateProfile={(name,pw,color,phone)=>updateProfile(liveUser.id,name,pw,color,phone)} onAddDebt={addDebt} onPayDebt={payDebt} onClearHistory={clearAllHistory} onSendPush={sendPushNotification} onReassignTeams={reassignAllTeams} onSendMessage={t=>sendMessage(t,liveUser.id,liveUser.name)} onVoteMvp={vid=>voteForMvp(liveUser.id,vid)} onLogout={switchAccount} showToast={showToast} setView={setView}/>}
+      {view==="debts"   && liveUser && <DebtsView   {...shared} player={liveUser} onBack={()=>setView(liveUser.is_admin?"admin":"player")}/>}
       {view==="stats"   && liveUser && <StatsView   {...shared} player={liveUser} onBack={()=>setView(liveUser.is_admin?"admin":"player")}/>}
-      {view==="chat"    && liveUser && <ChatView    {...shared} player={liveUser} onSendMessage={(t)=>sendMessage(t,liveUser.id,liveUser.name)} onBack={()=>setView(liveUser.is_admin?"admin":"player")}/>}
+      {view==="chat"    && liveUser && <ChatView    {...shared} player={liveUser} onSendMessage={t=>sendMessage(t,liveUser.id,liveUser.name)} onBack={()=>setView(liveUser.is_admin?"admin":"player")}/>}
       {view==="profile" && liveUser && <ProfileView {...shared} player={liveUser} onUpdateProfile={(name,pw,color,phone)=>updateProfile(liveUser.id,name,pw,color,phone)} onBack={()=>setView(liveUser.is_admin?"admin":"player")} onLogout={handleLogout} onSwitchAccount={switchAccount}/>}
     </div>
   );
@@ -542,45 +365,36 @@ function DebtRow({debt, onPayDebt}) {
           <button style={{background:"#16a34a",border:"none",borderRadius:8,padding:"5px 10px",fontSize:11,fontWeight:800,color:"white",cursor:"pointer"}} onClick={()=>onPayDebt(debt.id)}>✓ Recebido</button>
         </div>
       </div>
-      {!showPartial ? (
-        <button onClick={()=>setShowPartial(true)} style={{background:"none",border:"none",color:"#fbbf24",fontSize:10,fontWeight:600,cursor:"pointer",marginTop:4,padding:0}}>
-          Pagamento parcial?
-        </button>
-      ) : (
-        <div style={{display:"flex",gap:6,marginTop:6}}>
-          <input className="text-input" type="number" placeholder="Valor recebido..." value={amount} onChange={e=>setAmount(e.target.value)} style={{fontSize:12,padding:"6px 10px"}}/>
-          <button style={{background:"#d97706",border:"none",borderRadius:8,padding:"6px 12px",fontSize:11,fontWeight:800,color:"white",cursor:"pointer",flexShrink:0}} onClick={()=>{
-            if(amount&&Number(amount)>0){onPayDebt(debt.id,Number(amount));setShowPartial(false);setAmount("");}
-          }}>OK</button>
-        </div>
-      )}
+      {!showPartial
+        ? <button onClick={()=>setShowPartial(true)} style={{background:"none",border:"none",color:"#fbbf24",fontSize:10,fontWeight:600,cursor:"pointer",marginTop:4,padding:0}}>Pagamento parcial?</button>
+        : <div style={{display:"flex",gap:6,marginTop:6}}>
+            <input className="text-input" type="number" placeholder="Valor recebido..." value={amount} onChange={e=>setAmount(e.target.value)} style={{fontSize:12,padding:"6px 10px"}}/>
+            <button style={{background:"#d97706",border:"none",borderRadius:8,padding:"6px 12px",fontSize:11,fontWeight:800,color:"white",cursor:"pointer",flexShrink:0}} onClick={()=>{if(amount&&Number(amount)>0){onPayDebt(debt.id,Number(amount));setShowPartial(false);setAmount("");}}}>OK</button>
+          </div>}
     </div>
   );
 }
 
 // ── EXPANDABLE RANKING ───────────────────────────────────────────────────────
-function ExpandableRanking({ranked=[], mvpCounts={}, totalGames=0, currentPlayer, darkMode}) {
+function ExpandableRanking({ranked=[], mvpCounts={}, totalGames=0, currentPlayer}) {
   const [expandedId, setExpandedId] = useState(null);
   return (
     <div style={{display:"flex",flexDirection:"column",gap:6,marginBottom:14}}>
       {ranked.map((p,i)=>{
-        const isOpen = expandedId === p.id;
-        const isMe = p.id === currentPlayer?.id;
-        const pctBar = ranked[0].total_games>0 ? Math.round(((p.total_games||0)/(ranked[0].total_games||1))*100) : 0;
-        const mvps = mvpCounts[p.name]||0;
-        const pPct = totalGames>0 ? Math.round(((p.total_games||0)/totalGames)*100) : 0;
-        const medal = i===0?"🥇":i===1?"🥈":i===2?"🥉":`${i+1}`;
+        const isOpen=expandedId===p.id, isMe=p.id===currentPlayer?.id;
+        const pctBar=ranked[0]?.total_games>0?Math.round(((p.total_games||0)/(ranked[0].total_games||1))*100):0;
+        const mvps=mvpCounts[p.name]||0;
+        const pPct=totalGames>0?Math.round(((p.total_games||0)/totalGames)*100):0;
+        const medal=i===0?"🥇":i===1?"🥈":i===2?"🥉":`${i+1}`;
         return (
-          <div key={p.id} style={{background:isMe?"#16241c":"#13201a",border:isMe?"2px solid #16a34a":"1px solid #23362a",borderRadius:12,overflow:"hidden",transition:"all 0.2s"}}>
+          <div key={p.id} style={{background:isMe?"#16241c":"#13201a",border:isMe?"2px solid #16a34a":"1px solid #23362a",borderRadius:12,overflow:"hidden"}}>
             <div style={{display:"flex",alignItems:"center",gap:8,padding:"10px 12px",cursor:"pointer"}} onClick={()=>setExpandedId(isOpen?null:p.id)}>
               <span style={{fontSize:12,fontWeight:800,color:i===0?"#fbbf24":i===1?"#cbd5e1":i===2?"#d97706":"#6b7d70",width:18,flexShrink:0}}>{medal}</span>
               <Avatar player={p} size={28}/>
               <div style={{flex:1,minWidth:0}}>
                 <div style={{fontSize:13,fontWeight:700,color:"white"}}>{p.name}{isMe?" (tu)":""}</div>
                 <div style={{fontSize:10,color:"#8ba593",display:"flex",gap:8,marginTop:2}}>
-                  <span>⚽ {p.total_games||0}</span>
-                  {mvps>0&&<span>⭐ {mvps}</span>}
-                  <span>📈 {pPct}%</span>
+                  <span>⚽ {p.total_games||0}</span>{mvps>0&&<span>⭐ {mvps}</span>}<span>📈 {pPct}%</span>
                 </div>
               </div>
               <div style={{display:"flex",alignItems:"center",gap:6,flexShrink:0}}>
@@ -593,14 +407,8 @@ function ExpandableRanking({ranked=[], mvpCounts={}, totalGames=0, currentPlayer
             </div>
             {isOpen&&(
               <div style={{padding:"0 12px 12px 50px",display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}}>
-                {[
-                  {label:"🔥 Série Atual", value:`${p.current_streak||0} jogos`},
-                  {label:"🏆 Melhor Série", value:`${p.best_streak||0} jogos`},
-                  {label:"💰 Total Pago", value:`${p.total_paid||0}€`},
-                  {label:"🧤 Posição", value:p.position==="GR"?"Guarda-Redes":"Polivalente"},
-                  {label:"⭐ MVPs", value:`${mvps} vez${mvps!==1?"es":"ez"}`},
-                  {label:"📈 Presença", value:`${pPct}%`},
-                ].map((s,si)=>(
+                {[{label:"🔥 Série Atual",value:`${p.current_streak||0} jogos`},{label:"🏆 Melhor Série",value:`${p.best_streak||0} jogos`},{label:"💰 Total Pago",value:`${p.total_paid||0}€`},{label:"🧤 Posição",value:p.position==="GR"?"Guarda-Redes":"Polivalente"},{label:"⭐ MVPs",value:`${mvps} vez${mvps!==1?"es":"ez"}`},{label:"📈 Presença",value:`${pPct}%`}]
+                  .map((s,si)=>(
                   <div key={si} style={{background:"#0a1a0a",borderRadius:8,padding:"8px 10px"}}>
                     <div style={{fontSize:10,color:"#6b7280",marginBottom:2}}>{s.label}</div>
                     <div style={{fontSize:13,fontWeight:800,color:"white"}}>{s.value}</div>
@@ -630,34 +438,19 @@ function HallOfFameMVP({history=[], members=[]}) {
     <div style={{marginBottom:14}}>
       <p className="section-label">🏆 HALL OF FAME MVP</p>
       <div style={{display:"flex",gap:8,marginBottom:10}}>
-        {lastMvp&&(
-          <div style={{flex:1,background:"rgba(217,119,6,0.15)",borderRadius:12,padding:"10px 12px",border:"1px solid #d97706"}}>
-            <div style={{fontSize:9,fontWeight:800,color:"#d97706",letterSpacing:1,marginBottom:4}}>👑 MVP ATUAL</div>
-            <div style={{fontSize:14,fontWeight:800,color:"#fbbf24"}}>{lastMvp.mvp_name}</div>
-            <div style={{fontSize:10,color:"#fcd34d"}}>{lastMvp.date}</div>
-          </div>
-        )}
-        {mvpAno&&(
-          <div style={{flex:1,background:"#dbeafe",borderRadius:12,padding:"10px 12px",border:"1px solid #2563eb"}}>
-            <div style={{fontSize:9,fontWeight:800,color:"#2563eb",letterSpacing:1,marginBottom:4}}>📅 MVP DO ANO</div>
-            <div style={{fontSize:14,fontWeight:800,color:"#1e3a8a"}}>{mvpAno[0]}</div>
-            <div style={{fontSize:10,color:"#1d4ed8"}}>{mvpAno[1]} vez{mvpAno[1]!==1?"es":""}</div>
-          </div>
-        )}
+        {lastMvp&&(<div style={{flex:1,background:"rgba(217,119,6,0.15)",borderRadius:12,padding:"10px 12px",border:"1px solid #d97706"}}><div style={{fontSize:9,fontWeight:800,color:"#d97706",letterSpacing:1,marginBottom:4}}>👑 MVP ATUAL</div><div style={{fontSize:14,fontWeight:800,color:"#fbbf24"}}>{lastMvp.mvp_name}</div><div style={{fontSize:10,color:"#fcd34d"}}>{lastMvp.date}</div></div>)}
+        {mvpAno&&(<div style={{flex:1,background:"#1e2a3a",borderRadius:12,padding:"10px 12px",border:"1px solid #2563eb"}}><div style={{fontSize:9,fontWeight:800,color:"#60a5fa",letterSpacing:1,marginBottom:4}}>📅 MVP DO ANO</div><div style={{fontSize:14,fontWeight:800,color:"#93c5fd"}}>{mvpAno[0]}</div><div style={{fontSize:10,color:"#60a5fa"}}>{mvpAno[1]} vez{mvpAno[1]!==1?"es":""}</div></div>)}
       </div>
       <div style={{background:"#16241c",borderRadius:14,border:"1px solid #23362a",overflow:"hidden"}}>
         {ranked.map(([name,count],i)=>{
           const pl=members.find(m=>m.name===name);
-          const max=ranked[0][1];
           return (
-            <div key={name} style={{display:"flex",alignItems:"center",gap:10,padding:"10px 14px",borderBottom:i<ranked.length-1?"1px solid #f0fdf4":"none"}}>
+            <div key={name} style={{display:"flex",alignItems:"center",gap:10,padding:"10px 14px",borderBottom:i<ranked.length-1?"1px solid #1a2e1a":"none"}}>
               <span style={{fontSize:14,width:20,flexShrink:0}}>{i===0?"🥇":i===1?"🥈":i===2?"🥉":`${i+1}`}</span>
-              {pl?<Avatar player={pl} size={28}/>:<div style={{width:28,height:28,borderRadius:"50%",background:"#d1fae5",display:"flex",alignItems:"center",justifyContent:"center",fontSize:12,fontWeight:800,color:"#16a34a"}}>{name[0]}</div>}
+              {pl?<Avatar player={pl} size={28}/>:<div style={{width:28,height:28,borderRadius:"50%",background:"#16a34a",display:"flex",alignItems:"center",justifyContent:"center",fontSize:12,fontWeight:800,color:"white"}}>{name[0]}</div>}
               <div style={{flex:1}}>
                 <div style={{fontSize:13,fontWeight:700,color:"white"}}>{name}</div>
-                <div style={{height:4,background:"#0f1a0f",borderRadius:99,marginTop:4,overflow:"hidden"}}>
-                  <div style={{width:`${(count/max)*100}%`,height:"100%",background:"linear-gradient(90deg,#d97706,#fbbf24)",borderRadius:99}}/>
-                </div>
+                <div style={{height:4,background:"#0f1a0f",borderRadius:99,marginTop:4,overflow:"hidden"}}><div style={{width:`${(count/ranked[0][1])*100}%`,height:"100%",background:"linear-gradient(90deg,#d97706,#fbbf24)",borderRadius:99}}/></div>
               </div>
               <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:22,color:"#d97706",flexShrink:0}}>{count}⭐</div>
             </div>
@@ -672,64 +465,41 @@ function HallOfFameMVP({history=[], members=[]}) {
 function RotatingHighlights({members, history, mvpVotes, confirmed, gameInfo}) {
   const [idx, setIdx] = useState(0);
   const highlights = [];
-  if(history.length > 0 && history[0].mvp_name) highlights.push({icon:"⭐", text:`${history[0].mvp_name} foi o MVP do último jogo!`});
-  if(history.length > 0 && history[0].winner_team) highlights.push({icon:"🏆", text:`Equipa ${history[0].winner_team} venceu o último jogo!`});
-  const topPlayer = [...members].sort((a,b)=>(b.total_games||0)-(a.total_games||0))[0];
-  if(topPlayer && topPlayer.total_games > 0) highlights.push({icon:"👑", text:`${topPlayer.name} lidera com ${topPlayer.total_games} jogos!`});
-  const faltam = 15 - confirmed.length;
-  if(faltam > 0 && faltam <= 5 && confirmed.length >= 8) highlights.push({icon:"🎯", text:`Faltam apenas ${faltam} jogador${faltam!==1?"es":""} para lotação máxima!`});
-  const votesHoje = mvpVotes.filter(v=>v.game_date===gameInfo.date);
-  if(votesHoje.length > 0) {
-    const counts={};
-    votesHoje.forEach(v=>{counts[v.voted_for_id]=(counts[v.voted_for_id]||0)+1;});
-    const topId = Object.keys(counts).sort((a,b)=>counts[b]-counts[a])[0];
-    const topMvp = members.find(p=>p.id===Number(topId));
-    if(topMvp) highlights.push({icon:"⭐", text:`${topMvp.name} está a liderar a votação MVP desta semana!`});
-  }
-  useEffect(()=>{
-    if(highlights.length <= 1) return;
-    const t = setInterval(()=>setIdx(i=>(i+1)%highlights.length), 4000);
-    return ()=>clearInterval(t);
-  }, [highlights.length]);
-  if(highlights.length === 0) return null;
-  const h = highlights[idx % highlights.length];
+  if(history.length>0&&history[0].mvp_name) highlights.push({icon:"⭐",text:`${history[0].mvp_name} foi o MVP do último jogo!`});
+  if(history.length>0&&history[0].winner_team) highlights.push({icon:"🏆",text:`Equipa ${history[0].winner_team} venceu o último jogo!`});
+  const topPlayer=[...members].sort((a,b)=>(b.total_games||0)-(a.total_games||0))[0];
+  if(topPlayer&&topPlayer.total_games>0) highlights.push({icon:"👑",text:`${topPlayer.name} lidera com ${topPlayer.total_games} jogos!`});
+  const faltam=15-confirmed.length;
+  if(faltam>0&&faltam<=5&&confirmed.length>=8) highlights.push({icon:"🎯",text:`Faltam apenas ${faltam} jogador${faltam!==1?"es":""} para lotação máxima!`});
+  const votesHoje=mvpVotes.filter(v=>v.game_date===gameInfo.date);
+  if(votesHoje.length>0){const counts={};votesHoje.forEach(v=>{counts[v.voted_for_id]=(counts[v.voted_for_id]||0)+1;});const topId=Object.keys(counts).sort((a,b)=>counts[b]-counts[a])[0];const topMvp=members.find(p=>p.id===Number(topId));if(topMvp) highlights.push({icon:"⭐",text:`${topMvp.name} está a liderar a votação MVP!`});}
+  useEffect(()=>{if(highlights.length<=1) return;const t=setInterval(()=>setIdx(i=>(i+1)%highlights.length),4000);return()=>clearInterval(t);},[highlights.length]);
+  if(highlights.length===0) return null;
+  const h=highlights[idx%highlights.length];
   return (
-    <div style={{background:"linear-gradient(135deg,#166534,#15803d)",borderRadius:14,padding:"12px 16px",marginBottom:14,display:"flex",alignItems:"center",gap:12,minHeight:52,transition:"all 0.3s"}}>
+    <div style={{background:"linear-gradient(135deg,#166534,#15803d)",borderRadius:14,padding:"12px 16px",marginBottom:14,display:"flex",alignItems:"center",gap:12,minHeight:52}}>
       <span style={{fontSize:22,flexShrink:0}}>{h.icon}</span>
       <span style={{fontSize:13,fontWeight:700,color:"white",flex:1}}>{h.text}</span>
-      {highlights.length > 1 && (
-        <div style={{display:"flex",gap:4,flexShrink:0}}>
-          {highlights.map((_,i)=>(
-            <div key={i} style={{width:6,height:6,borderRadius:"50%",background:i===idx%highlights.length?"white":"rgba(255,255,255,0.3)"}}/>
-          ))}
-        </div>
-      )}
+      {highlights.length>1&&<div style={{display:"flex",gap:4,flexShrink:0}}>{highlights.map((_,i)=><div key={i} style={{width:6,height:6,borderRadius:"50%",background:i===idx%highlights.length?"white":"rgba(255,255,255,0.3)"}}/>)}</div>}
     </div>
   );
 }
 
 // ── GROUP STATUS CARD ────────────────────────────────────────────────────────
 function GroupStatusCard({confirmed, notYet, members, players=[]}) {
-  const grs = confirmed.filter(p => {
-    const pl = players.find(pl => pl.id === p.id);
-    return pl?.position === "GR";
-  });
-  const hasEnoughGRs = grs.length >= 2;
-  const isFull = confirmed.length >= 15;
-  const almostFull = confirmed.length >= 12 && confirmed.length < 15;
-  const teamsReady = confirmed.length >= 10 && hasEnoughGRs;
-  let messages = [];
-  if (isFull) messages.push({ icon: "🎉", text: "Jogo completo! Estamos todos!", color: "#16a34a", bg: "#dcfce7" });
-  else if (almostFull) messages.push({ icon: "🔥", text: `Lotação quase completa — só faltam ${15 - confirmed.length}!`, color: "#d97706", bg: "#fef3c7" });
-  if (!hasEnoughGRs && confirmed.length >= 6) messages.push({ icon: "⚠️", text: `Faltam guarda-redes! Só ${grs.length} GR confirmado${grs.length !== 1 ? "s" : ""}`, color: "#dc2626", bg: "#fee2e2" });
-  if (teamsReady && !isFull) messages.push({ icon: "✅", text: "Equipas prontas para jogar!", color: "#16a34a", bg: "#dcfce7" });
-  if (notYet.length > 0) messages.push({ icon: "📢", text: `${notYet.length} jogador${notYet.length !== 1 ? "es" : ""} ainda não ${notYet.length !== 1 ? "responderam" : "respondeu"}`, color: "#6b7280", bg: "#f1f5f9" });
-  if (confirmed.length < 6) messages.push({ icon: "😴", text: "Ainda poucos confirmados — partilha com o grupo!", color: "#7c3aed", bg: "#ede9fe" });
-  if (messages.length === 0) return null;
+  const grs=confirmed.filter(p=>(players.find(pl=>pl.id===p.id))?.position==="GR");
+  const msgs=[];
+  if(confirmed.length>=15) msgs.push({icon:"🎉",text:"Jogo completo! Estamos todos!",color:"#16a34a",bg:"rgba(22,163,74,0.1)"});
+  else if(confirmed.length>=12) msgs.push({icon:"🔥",text:`Lotação quase completa — só faltam ${15-confirmed.length}!`,color:"#d97706",bg:"rgba(217,119,6,0.1)"});
+  if(grs.length<2&&confirmed.length>=6) msgs.push({icon:"⚠️",text:`Faltam guarda-redes! Só ${grs.length} GR confirmado${grs.length!==1?"s":""}`,color:"#dc2626",bg:"rgba(239,68,68,0.1)"});
+  if(confirmed.length>=10&&grs.length>=2&&confirmed.length<15) msgs.push({icon:"✅",text:"Equipas prontas para jogar!",color:"#16a34a",bg:"rgba(22,163,74,0.1)"});
+  if(notYet.length>0) msgs.push({icon:"📢",text:`${notYet.length} jogador${notYet.length!==1?"es":""} ainda não ${notYet.length!==1?"responderam":"respondeu"}`,color:"#6b7280",bg:"rgba(107,114,128,0.1)"});
+  if(confirmed.length<6) msgs.push({icon:"😴",text:"Ainda poucos confirmados — partilha com o grupo!",color:"#7c3aed",bg:"rgba(124,58,237,0.1)"});
+  if(msgs.length===0) return null;
   return (
     <div style={{display:"flex",flexDirection:"column",gap:6,marginBottom:14}}>
-      {messages.map((m, i) => (
-        <div key={i} style={{background:m.bg,borderRadius:12,padding:"10px 14px",display:"flex",alignItems:"center",gap:10,border:`1px solid ${m.color}22`}}>
+      {msgs.map((m,i)=>(
+        <div key={i} style={{background:m.bg,borderRadius:12,padding:"10px 14px",display:"flex",alignItems:"center",gap:10,border:`1px solid ${m.color}33`}}>
           <span style={{fontSize:18}}>{m.icon}</span>
           <span style={{fontSize:13,fontWeight:700,color:m.color}}>{m.text}</span>
         </div>
@@ -743,24 +513,16 @@ function ExpandableList({confirmed}) {
   const [open, setOpen] = useState(false);
   return (
     <div style={{marginTop:4}}>
-      <button onClick={()=>setOpen(v=>!v)} style={{background:"rgba(0,0,0,0.2)",border:"none",borderRadius:20,padding:"3px 10px",color:"rgba(255,255,255,0.9)",fontSize:10,fontWeight:700,cursor:"pointer",display:"flex",alignItems:"center",gap:5}}>
+      <button onClick={()=>setOpen(v=>!v)} style={{background:"rgba(0,0,0,0.2)",border:"none",borderRadius:20,padding:"3px 10px",color:"rgba(255,255,255,0.9)",fontSize:10,fontWeight:700,cursor:"pointer"}}>
         ✓ {confirmed.length} confirmados {open?"▲":"▼"}
       </button>
-      {open&&(
-        <div style={{display:"flex",flexWrap:"wrap",gap:3,marginTop:6}}>
-          {confirmed.map(p=>(
-            <span key={p.id} style={{background:p.is_guest?"rgba(124,58,237,0.3)":"rgba(0,0,0,0.25)",borderRadius:20,padding:"2px 7px",fontSize:10,color:p.is_guest?"#c4b5fd":"rgba(255,255,255,0.85)",fontWeight:600}}>
-              {p.name}{p.is_guest?" 👤":""}
-            </span>
-          ))}
-        </div>
-      )}
+      {open&&<div style={{display:"flex",flexWrap:"wrap",gap:3,marginTop:6}}>{confirmed.map(p=><span key={p.id} style={{background:p.is_guest?"rgba(124,58,237,0.3)":"rgba(0,0,0,0.25)",borderRadius:20,padding:"2px 7px",fontSize:10,color:p.is_guest?"#c4b5fd":"rgba(255,255,255,0.85)",fontWeight:600}}>{p.name}{p.is_guest?" 👤":""}</span>)}</div>}
     </div>
   );
 }
 
-// ── FIELD HEADER ─────────────────────────────────────────────────────────────
-function FieldHeader({gameInfo,cdStr,confirmed,notYet,waiting,viewingDate,setViewingDate,historyGame,isViewingHistory,effectiveDate,darkMode,setDarkMode,extraRight,isLoggedIn=true,attendance}) {
+// ── FIELD HEADER — sem botão modo noturno ─────────────────────────────────────
+function FieldHeader({gameInfo,cdStr,confirmed,notYet,waiting,viewingDate,setViewingDate,historyGame,isViewingHistory,effectiveDate,attendance,extraRight,isLoggedIn=true}) {
   const pct=Math.round((confirmed.length/MAX_PLAYERS)*100);
   const canFwd=viewingDate&&viewingDate<gameInfo.date;
   return (
@@ -773,7 +535,6 @@ function FieldHeader({gameInfo,cdStr,confirmed,notYet,waiting,viewingDate,setVie
             <button className="field-nav-btn" onClick={()=>setViewingDate(prevWeek(effectiveDate))}><Icon name="left" size={13}/></button>
             {isViewingHistory&&<button className="field-nav-btn" style={{fontSize:10,padding:"3px 8px",fontWeight:800}} onClick={()=>setViewingDate(null)}>HOJE</button>}
             {canFwd&&<button className="field-nav-btn" onClick={()=>setViewingDate(nextWeek(viewingDate))}><Icon name="right" size={13}/></button>}
-            <button className="field-nav-btn" onClick={()=>setDarkMode(v=>!v)}><Icon name={darkMode?"sun":"moon"} size={13}/></button>
             {extraRight}
           </div>
         </div>
@@ -789,11 +550,7 @@ function FieldHeader({gameInfo,cdStr,confirmed,notYet,waiting,viewingDate,setVie
                   {historyGame.mvp_name&&<div><div style={{fontFamily:"'Bebas Neue',cursive",fontSize:28,color:"#f472b6"}}>{historyGame.mvp_name}</div><div style={{fontSize:9,color:"rgba(255,255,255,0.5)",letterSpacing:1}}>MVP ⭐</div></div>}
                 </div>
                 {attendance&&attendance.filter(a=>a.game_date===effectiveDate).length>0&&(
-                  <div style={{display:"flex",flexWrap:"wrap",gap:3}}>
-                    {attendance.filter(a=>a.game_date===effectiveDate).map((a,i)=>(
-                      <span key={i} style={{background:"rgba(255,255,255,0.1)",borderRadius:20,padding:"2px 8px",fontSize:10,color:"rgba(255,255,255,0.7)",fontWeight:600}}>{a.player_name}</span>
-                    ))}
-                  </div>
+                  <div style={{display:"flex",flexWrap:"wrap",gap:3}}>{attendance.filter(a=>a.game_date===effectiveDate).map((a,i)=><span key={i} style={{background:"rgba(255,255,255,0.1)",borderRadius:20,padding:"2px 8px",fontSize:10,color:"rgba(255,255,255,0.7)",fontWeight:600}}>{a.player_name}</span>)}</div>
                 )}
               </div>
             ):<div style={{fontSize:12,color:"rgba(255,255,255,0.4)"}}>Sem registo para esta semana</div>}
@@ -826,54 +583,42 @@ function FieldHeader({gameInfo,cdStr,confirmed,notYet,waiting,viewingDate,setVie
   );
 }
 
-// ── LANDING VIEW ─────────────────────────────────────────────────────────────
+// ── LANDING VIEW — 4 botões ───────────────────────────────────────────────────
 function LandingView({setView}) {
+  const items = [
+    {key:"criar-grupo",    icon:"plus",   iconBg:"rgba(212,175,55,0.15)", title:"Criar grupo",        sub:"Sou o organizador",          solid:true},
+    {key:"entrar-convite", icon:"key",    iconBg:"rgba(255,255,255,0.05)",title:"Entrar com convite", sub:"Tenho um código de convite",  solid:true},
+    {key:"criar-conta",    icon:"user",   iconBg:"rgba(255,255,255,0.05)",title:"Criar conta",         sub:"Entrar num grupo existente", solid:true},
+    {key:"login",          icon:"shield", iconBg:"rgba(255,255,255,0.03)",title:"Já tenho conta",      sub:"Iniciar sessão",             solid:false},
+  ];
   return (
     <div style={{background:"#0a0a0a",minHeight:"100vh",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:"24px"}}>
-      <div style={{textAlign:"center",marginBottom:40}}>
+      <div style={{textAlign:"center",marginBottom:36}}>
         <div style={{fontSize:22,fontWeight:500,color:"white",letterSpacing:1}}>HOJE HÁ</div>
         <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:52,color:"#d4af37",letterSpacing:3,lineHeight:1}}>JOGO</div>
         <div style={{fontSize:12,color:"#4b5563",marginTop:8}}>Gestão de futsal semanal</div>
       </div>
       <div style={{width:"100%",maxWidth:360,display:"flex",flexDirection:"column",gap:10}}>
-        <button onClick={()=>setView("criar-grupo")} style={{width:"100%",background:"#111",border:"1px solid #1f1f1f",borderRadius:14,padding:"16px",cursor:"pointer",display:"flex",alignItems:"center",gap:14,textAlign:"left"}}>
-          <div style={{width:44,height:44,background:"rgba(212,175,55,0.15)",borderRadius:12,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
-            <Icon name="plus" size={22}/>
-          </div>
-          <div style={{flex:1}}>
-            <div style={{color:"white",fontSize:15,fontWeight:700,marginBottom:2}}>Criar grupo</div>
-            <div style={{color:"#4b5563",fontSize:12}}>Sou o organizador</div>
-          </div>
-          <Icon name="right" size={16}/>
-        </button>
-        <button onClick={()=>setView("entrar-convite")} style={{width:"100%",background:"#111",border:"1px solid #1f1f1f",borderRadius:14,padding:"16px",cursor:"pointer",display:"flex",alignItems:"center",gap:14,textAlign:"left"}}>
-          <div style={{width:44,height:44,background:"rgba(255,255,255,0.05)",borderRadius:12,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
-            <Icon name="key" size={22}/>
-          </div>
-          <div style={{flex:1}}>
-            <div style={{color:"white",fontSize:15,fontWeight:700,marginBottom:2}}>Entrar com convite</div>
-            <div style={{color:"#4b5563",fontSize:12}}>Tenho um código de convite</div>
-          </div>
-          <Icon name="right" size={16}/>
-        </button>
-        <button onClick={()=>setView("login")} style={{width:"100%",background:"transparent",border:"none",borderRadius:14,padding:"14px",cursor:"pointer",display:"flex",alignItems:"center",gap:14,textAlign:"left"}}>
-          <div style={{width:44,height:44,background:"rgba(255,255,255,0.05)",borderRadius:12,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
-            <Icon name="user" size={22}/>
-          </div>
-          <div style={{flex:1}}>
-            <div style={{color:"white",fontSize:15,fontWeight:700,marginBottom:2}}>Já tenho conta</div>
-            <div style={{color:"#4b5563",fontSize:12}}>Iniciar sessão</div>
-          </div>
-          <Icon name="right" size={16}/>
-        </button>
+        {items.map((item,i)=>(
+          <button key={i} onClick={()=>setView(item.key)} style={{width:"100%",background:item.solid?"#111":"transparent",border:item.solid?"1px solid #1f1f1f":"none",borderRadius:14,padding:item.solid?"16px":"14px",cursor:"pointer",display:"flex",alignItems:"center",gap:14,textAlign:"left"}}>
+            <div style={{width:44,height:44,background:item.iconBg,borderRadius:12,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
+              <Icon name={item.icon} size={22}/>
+            </div>
+            <div style={{flex:1}}>
+              <div style={{color:"white",fontSize:15,fontWeight:700,marginBottom:2}}>{item.title}</div>
+              <div style={{color:"#4b5563",fontSize:12}}>{item.sub}</div>
+            </div>
+            <Icon name="right" size={16}/>
+          </button>
+        ))}
       </div>
       <div style={{position:"absolute",bottom:24,color:"#222",fontSize:11}}>hojehajogo.pt</div>
     </div>
   );
 }
 
-// ── LOGIN VIEW — página limpa, sem header do campo ───────────────────────────
-function LoginView({onLogin, showToast, setView, darkMode}) {
+// ── LOGIN VIEW — página limpa ─────────────────────────────────────────────────
+function LoginView({onLogin, showToast, setView}) {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [showPw, setShowPw]     = useState(false);
@@ -889,240 +634,38 @@ function LoginView({onLogin, showToast, setView, darkMode}) {
 
   return (
     <div style={{background:"#0a0a0a",minHeight:"100vh",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:"24px"}}>
-      <style>{getCss(darkMode)}</style>
-
-      {/* Logo */}
       <div style={{textAlign:"center",marginBottom:36}}>
         <div style={{fontSize:20,fontWeight:500,color:"white",letterSpacing:1}}>HOJE HÁ</div>
         <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:48,color:"#d4af37",letterSpacing:3,lineHeight:1}}>JOGO</div>
       </div>
-
-      {/* Form */}
       <div style={{width:"100%",maxWidth:360,background:"#111",border:"1px solid #1f1f1f",borderRadius:16,padding:"24px",display:"flex",flexDirection:"column",gap:14}}>
         <div style={{fontSize:14,fontWeight:700,color:"white",textAlign:"center",marginBottom:4}}>Iniciar sessão</div>
-
         <div>
           <label style={{color:"#6b7280",fontSize:11,fontWeight:700,display:"block",marginBottom:6,letterSpacing:0.5}}>UTILIZADOR OU TELEMÓVEL</label>
-          <input
-            className="text-input"
-            placeholder="O teu utilizador..."
-            value={username}
-            onChange={e=>setUsername(e.target.value)}
-            onKeyDown={e=>e.key==="Enter"&&handleSubmit()}
-            autoCapitalize="none"
-            autoFocus
-          />
+          <input className="text-input" placeholder="O teu utilizador..." value={username} onChange={e=>setUsername(e.target.value)} onKeyDown={e=>e.key==="Enter"&&handleSubmit()} autoCapitalize="none" autoFocus/>
         </div>
-
         <div>
           <label style={{color:"#6b7280",fontSize:11,fontWeight:700,display:"block",marginBottom:6,letterSpacing:0.5}}>PASSWORD</label>
           <div style={{position:"relative",display:"flex",alignItems:"center"}}>
-            <input
-              className="text-input"
-              type={showPw?"text":"password"}
-              placeholder="••••••"
-              value={password}
-              onChange={e=>setPassword(e.target.value)}
-              onKeyDown={e=>e.key==="Enter"&&handleSubmit()}
-              style={{paddingRight:44}}
-            />
-            <button
-              type="button"
-              onClick={()=>setShowPw(v=>!v)}
-              style={{position:"absolute",right:12,background:"transparent",border:"none",color:"#6b7280",cursor:"pointer",display:"flex",alignItems:"center"}}
-            >
+            <input className="text-input" type={showPw?"text":"password"} placeholder="••••••" value={password} onChange={e=>setPassword(e.target.value)} onKeyDown={e=>e.key==="Enter"&&handleSubmit()} style={{paddingRight:44}}/>
+            <button type="button" onClick={()=>setShowPw(v=>!v)} style={{position:"absolute",right:12,background:"transparent",border:"none",color:"#6b7280",cursor:"pointer",display:"flex",alignItems:"center"}}>
               <Icon name={showPw?"eyeoff":"eye"} size={16}/>
             </button>
           </div>
         </div>
-
-        <button
-          className="btn-big btn-green"
-          style={{marginBottom:0,marginTop:4}}
-          onClick={handleSubmit}
-          disabled={loading}
-        >
+        <button className="btn-big btn-green" style={{marginBottom:0,marginTop:4}} onClick={handleSubmit} disabled={loading}>
           {loading?"A entrar...":"ENTRAR →"}
         </button>
       </div>
-
-      {/* Voltar */}
-      <button
-        onClick={()=>setView("landing")}
-        style={{marginTop:20,background:"transparent",border:"none",color:"#4b5563",fontSize:13,cursor:"pointer",display:"flex",alignItems:"center",gap:6}}
-      >
+      <button onClick={()=>setView("landing")} style={{marginTop:20,background:"transparent",border:"none",color:"#4b5563",fontSize:13,cursor:"pointer",display:"flex",alignItems:"center",gap:6}}>
         <Icon name="left" size={14}/> Voltar
       </button>
     </div>
   );
 }
 
-// ── CRIAR GRUPO VIEW ──────────────────────────────────────────────────────────
-function CriarGrupoView({setView, showToast, darkMode, onLogin, players, reloadPlayers}) {
-  const [step, setStep]               = useState(1);
-  const [groupName, setGroupName]     = useState("");
-  const [location, setLocation]       = useState("");
-  const [time, setTime]               = useState("22:30");
-  const [cost, setCost]               = useState("3");
-  const [adminName, setAdminName]     = useState("");
-  const [adminUsername, setAdminUsername] = useState("");
-  const [adminPassword, setAdminPassword] = useState("");
-  const [adminPhone, setAdminPhone]   = useState("");
-  const [loading, setLoading]         = useState(false);
-  const [inviteCode, setInviteCode]   = useState("");
-  const [createdGroup, setCreatedGroup] = useState(null);
-
-  const generateCode = () => {
-    const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
-    let code = "HHJ-";
-    for(let i=0;i<4;i++) code += chars[Math.floor(Math.random()*chars.length)];
-    return code;
-  };
-
-  const handleCreate = async() => {
-    if(!groupName.trim()||!adminName.trim()||!adminUsername.trim()||!adminPassword.trim()){
-      showToast("Preenche todos os campos obrigatórios","err"); return;
-    }
-    setLoading(true);
-    try {
-      const code = generateCode();
-
-      // 1. Criar grupo
-      const {data:group, error:ge} = await supabase.from("groups").insert({
-        name:groupName.trim(), location:location.trim(), time,
-        cost_per_player:Number(cost), invite_code:code
-      }).select().single();
-      if(ge) throw ge;
-
-      // 2. Criar admin player com group_id
-      const color = ["#16a34a","#2563eb","#7c3aed","#dc2626","#d97706"][Math.floor(Math.random()*5)];
-      const {error:pe} = await supabase.from("players").insert({
-        name:adminName.trim(),
-        username:adminUsername.trim().toLowerCase(),
-        password:adminPassword,
-        phone:adminPhone||null,
-        is_admin:true, status:"out", paid:false, is_guest:false,
-        avatar_color:color,
-        group_id:group.id
-      });
-      if(pe) throw pe;
-
-      // 3. Criar game_info para este grupo
-      const nw = ()=>{const d=new Date();const day=d.getDay();const diff=(3-day+7)%7||7;d.setDate(d.getDate()+diff);return d.toISOString().split("T")[0];};
-      await supabase.from("game_info").insert({
-        location:location.trim()||"A definir",
-        date:nw(), time,
-        app_name:groupName.trim(),
-        cost_per_player:Number(cost),
-        group_id:group.id
-      });
-
-      setInviteCode(code);
-      setCreatedGroup({...group, adminUsername: adminUsername.trim().toLowerCase(), adminPassword});
-      setStep(3);
-    } catch(e) {
-      showToast("Erro ao criar grupo: "+e.message,"err");
-    }
-    setLoading(false);
-  };
-
-  // Passo 3 — ecrã de partilha + entrada na app
-  const handleEnterApp = async() => {
-    if(!createdGroup) return;
-    setLoading(true);
-    // Recarregar players para incluir o admin recém-criado
-    await reloadPlayers(createdGroup.id);
-    // Pequeno delay para garantir que o state atualiza
-    await new Promise(r=>setTimeout(r,500));
-    const ok = await onLogin(createdGroup.adminUsername, createdGroup.adminPassword, createdGroup.id);
-    setLoading(false);
-    if(!ok){
-      // fallback: reload
-      window.location.reload();
-    }
-  };
-
-  if(step===3) return (
-    <div style={{background:"#0a0a0a",minHeight:"100vh",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:"24px"}}>
-      <style>{getCss(darkMode)}</style>
-      <div style={{textAlign:"center",marginBottom:32}}>
-        <div style={{fontSize:48,marginBottom:12}}>🎉</div>
-        <div style={{color:"white",fontSize:20,fontWeight:700,marginBottom:8}}>Grupo criado!</div>
-        <div style={{color:"#6b7280",fontSize:13}}>Partilha o código com os teus jogadores</div>
-      </div>
-      <div style={{background:"#111",border:"2px solid #d4af37",borderRadius:16,padding:"24px",textAlign:"center",marginBottom:24,width:"100%",maxWidth:320}}>
-        <div style={{color:"#6b7280",fontSize:12,marginBottom:8}}>CÓDIGO DE CONVITE</div>
-        <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:42,color:"#d4af37",letterSpacing:6}}>{inviteCode}</div>
-        <div style={{color:"#4b5563",fontSize:12,marginTop:8}}>{groupName}</div>
-      </div>
-      <button
-        onClick={()=>{
-          if(navigator.share){
-            navigator.share({title:"Hoje Há Jogo",text:`Junta-te ao grupo "${groupName}"! Código: ${inviteCode}`,url:"https://hojehajogo.pt"});
-          } else {
-            navigator.clipboard.writeText(inviteCode).then(()=>showToast("Código copiado ✓"));
-          }
-        }}
-        style={{width:"100%",maxWidth:320,padding:"14px",background:"#d4af37",border:"none",borderRadius:12,color:"#0a0a0a",fontWeight:700,fontSize:14,cursor:"pointer",marginBottom:12}}
-      >
-        📤 Partilhar código
-      </button>
-      <button
-        onClick={handleEnterApp}
-        disabled={loading}
-        style={{background:"transparent",border:"none",color:"#4ade80",fontSize:13,fontWeight:700,cursor:"pointer"}}
-      >
-        {loading?"A entrar...":"Entrar na app →"}
-      </button>
-    </div>
-  );
-
-  return (
-    <div style={{background:"#0a0a0a",minHeight:"100vh"}}>
-      <style>{getCss(darkMode)}</style>
-      <div style={{background:"#111",padding:"16px",borderBottom:"1px solid #1f1f1f",display:"flex",alignItems:"center",gap:10}}>
-        <button onClick={()=>step===1?setView("landing"):setStep(1)} style={{background:"transparent",border:"none",color:"white",cursor:"pointer",padding:4}}>
-          <Icon name="left" size={18}/>
-        </button>
-        <span style={{color:"white",fontWeight:700,fontSize:16}}>Criar grupo</span>
-        <span style={{color:"#4b5563",fontSize:12,marginLeft:"auto"}}>{step}/2</span>
-      </div>
-      <div style={{padding:"24px 20px"}}>
-        {step===1&&<>
-          <p style={{color:"#6b7280",fontSize:12,marginBottom:20}}>Informações do grupo</p>
-          <label style={{color:"#9ca3af",fontSize:11,fontWeight:700,display:"block",marginBottom:6}}>NOME DO GRUPO *</label>
-          <input className="text-input" value={groupName} onChange={e=>setGroupName(e.target.value)} placeholder="Ex: Futebolada da Quinta" style={{marginBottom:14}}/>
-          <label style={{color:"#9ca3af",fontSize:11,fontWeight:700,display:"block",marginBottom:6}}>LOCAL HABITUAL</label>
-          <input className="text-input" value={location} onChange={e=>setLocation(e.target.value)} placeholder="Ex: Pavilhão Municipal" style={{marginBottom:14}}/>
-          <label style={{color:"#9ca3af",fontSize:11,fontWeight:700,display:"block",marginBottom:6}}>HORA HABITUAL</label>
-          <input className="text-input" type="time" value={time} onChange={e=>setTime(e.target.value)} style={{marginBottom:14}}/>
-          <label style={{color:"#9ca3af",fontSize:11,fontWeight:700,display:"block",marginBottom:6}}>CUSTO POR JOGADOR (€)</label>
-          <input className="text-input" type="number" step="0.5" min="0" value={cost} onChange={e=>setCost(e.target.value)} style={{marginBottom:24}}/>
-          <button className="btn-big btn-green" onClick={()=>{if(!groupName.trim()){showToast("Nome do grupo obrigatório","err");return;}setStep(2);}}>
-            Continuar →
-          </button>
-        </>}
-        {step===2&&<>
-          <p style={{color:"#6b7280",fontSize:12,marginBottom:20}}>Os teus dados como administrador</p>
-          <label style={{color:"#9ca3af",fontSize:11,fontWeight:700,display:"block",marginBottom:6}}>O TEU NOME *</label>
-          <input className="text-input" value={adminName} onChange={e=>setAdminName(e.target.value)} placeholder="Ex: João Silva" style={{marginBottom:14}}/>
-          <label style={{color:"#9ca3af",fontSize:11,fontWeight:700,display:"block",marginBottom:6}}>USERNAME *</label>
-          <input className="text-input" value={adminUsername} onChange={e=>setAdminUsername(e.target.value)} placeholder="Ex: joao" autoCapitalize="none" style={{marginBottom:14}}/>
-          <label style={{color:"#9ca3af",fontSize:11,fontWeight:700,display:"block",marginBottom:6}}>PASSWORD *</label>
-          <input className="text-input" type="password" value={adminPassword} onChange={e=>setAdminPassword(e.target.value)} placeholder="••••••" style={{marginBottom:14}}/>
-          <label style={{color:"#9ca3af",fontSize:11,fontWeight:700,display:"block",marginBottom:6}}>TELEMÓVEL (opcional)</label>
-          <input className="text-input" type="tel" value={adminPhone} onChange={e=>setAdminPhone(e.target.value)} placeholder="9XX XXX XXX" style={{marginBottom:24}}/>
-          <button className="btn-big btn-green" onClick={handleCreate} disabled={loading}>
-            {loading?"A criar...":"🚀 Criar grupo"}
-          </button>
-        </>}
-      </div>
-    </div>
-  );
-}
-
-// ── ENTRAR CONVITE VIEW ───────────────────────────────────────────────────────
-function EntrarConviteView({setView, onLogin, showToast, darkMode, players}) {
+// ── CRIAR CONTA VIEW ──────────────────────────────────────────────────────────
+function CriarContaView({setView, onLogin, showToast}) {
   const [code, setCode]         = useState("");
   const [group, setGroup]       = useState(null);
   const [step, setStep]         = useState(1);
@@ -1133,77 +676,41 @@ function EntrarConviteView({setView, onLogin, showToast, darkMode, players}) {
   const [loading, setLoading]   = useState(false);
 
   const checkCode = async() => {
-    if(!code.trim()){showToast("Insere o código de convite","err");return;}
+    if(!code.trim()){showToast("Insere o código do grupo","err");return;}
     setLoading(true);
-    const {data} = await supabase.from("groups").select("*").eq("invite_code",code.trim().toUpperCase()).single();
+    const{data}=await supabase.from("groups").select("*").eq("invite_code",code.trim().toUpperCase()).single();
     setLoading(false);
-    if(!data){showToast("Código inválido ou expirado","err");return;}
-    setGroup(data);
-    setStep(2);
+    if(!data){showToast("Código inválido","err");return;}
+    setGroup(data); setStep(2);
   };
 
   const handleRegister = async() => {
-    if(!name.trim()||!username.trim()||!password.trim()){
-      showToast("Preenche todos os campos obrigatórios","err");return;
-    }
+    if(!name.trim()||!username.trim()||!password.trim()){showToast("Preenche todos os campos obrigatórios","err");return;}
     setLoading(true);
-    // Verificar username no grupo
-    const {data:existing} = await supabase.from("players")
-      .select("id")
-      .eq("username",username.trim().toLowerCase())
-      .eq("group_id",group.id);
-    if(existing&&existing.length>0){
-      showToast("Username já existe neste grupo","err");
-      setLoading(false);return;
-    }
-    const color = ["#16a34a","#2563eb","#7c3aed","#dc2626","#d97706","#0891b2","#be185d","#065f46"][Math.floor(Math.random()*8)];
-    const {data:newPlayer, error} = await supabase.from("players").insert({
-      name:name.trim(),
-      username:username.trim().toLowerCase(),
-      password,
-      phone:phone||null,
-      is_admin:false, status:"out", paid:false, is_guest:false,
-      avatar_color:color,
-      group_id:group.id
-    }).select().single();
-
+    const{data:existing}=await supabase.from("players").select("id").eq("username",username.trim().toLowerCase()).eq("group_id",group.id);
+    if(existing&&existing.length>0){showToast("Username já existe neste grupo","err");setLoading(false);return;}
+    const color=AVATAR_COLORS[Math.floor(Math.random()*AVATAR_COLORS.length)];
+    const{error}=await supabase.from("players").insert({name:name.trim(),username:username.trim().toLowerCase(),password,phone:phone||null,is_admin:false,status:"out",paid:false,is_guest:false,avatar_color:color,group_id:group.id});
     if(error){showToast("Erro ao criar conta","err");setLoading(false);return;}
-
     showToast("Conta criada! A entrar... 🎉");
-    // Login automático — sem reload
     await new Promise(r=>setTimeout(r,800));
-    const ok = await onLogin(username.trim().toLowerCase(), password, group.id);
+    const ok=await onLogin(username.trim().toLowerCase(),password,group.id);
     setLoading(false);
-    if(!ok){
-      // fallback: reload
-      window.location.reload();
-    }
+    if(!ok) window.location.reload();
   };
 
   return (
     <div style={{background:"#0a0a0a",minHeight:"100vh"}}>
-      <style>{getCss(darkMode)}</style>
       <div style={{background:"#111",padding:"16px",borderBottom:"1px solid #1f1f1f",display:"flex",alignItems:"center",gap:10}}>
-        <button onClick={()=>step===1?setView("landing"):setStep(1)} style={{background:"transparent",border:"none",color:"white",cursor:"pointer",padding:4}}>
-          <Icon name="left" size={18}/>
-        </button>
-        <span style={{color:"white",fontWeight:700,fontSize:16}}>Entrar com convite</span>
+        <button onClick={()=>step===1?setView("landing"):setStep(1)} style={{background:"transparent",border:"none",color:"white",cursor:"pointer",padding:4}}><Icon name="left" size={18}/></button>
+        <span style={{color:"white",fontWeight:700,fontSize:16}}>Criar conta</span>
       </div>
       <div style={{padding:"24px 20px"}}>
         {step===1&&<>
-          <p style={{color:"#6b7280",fontSize:13,marginBottom:24}}>Insere o código que recebeste do organizador</p>
-          <label style={{color:"#9ca3af",fontSize:11,fontWeight:700,display:"block",marginBottom:6}}>CÓDIGO DE CONVITE</label>
-          <input
-            className="text-input"
-            value={code}
-            onChange={e=>setCode(e.target.value.toUpperCase())}
-            placeholder="Ex: HHJ-X7K9"
-            autoCapitalize="characters"
-            style={{marginBottom:24,fontFamily:"'Bebas Neue',cursive",fontSize:20,letterSpacing:3,textAlign:"center"}}
-          />
-          <button className="btn-big btn-green" onClick={checkCode} disabled={loading}>
-            {loading?"A verificar...":"Verificar código →"}
-          </button>
+          <p style={{color:"#6b7280",fontSize:13,marginBottom:24}}>Precisas do código do teu grupo para criares uma conta</p>
+          <label style={{color:"#9ca3af",fontSize:11,fontWeight:700,display:"block",marginBottom:6}}>CÓDIGO DO GRUPO</label>
+          <input className="text-input" value={code} onChange={e=>setCode(e.target.value.toUpperCase())} placeholder="Ex: HHJ-X7K9" autoCapitalize="characters" style={{marginBottom:24,fontFamily:"'Bebas Neue',cursive",fontSize:20,letterSpacing:3,textAlign:"center"}}/>
+          <button className="btn-big btn-green" onClick={checkCode} disabled={loading}>{loading?"A verificar...":"Verificar código →"}</button>
         </>}
         {step===2&&group&&<>
           <div style={{background:"rgba(212,175,55,0.1)",border:"1px solid #d4af37",borderRadius:12,padding:"14px",marginBottom:24,textAlign:"center"}}>
@@ -1218,9 +725,209 @@ function EntrarConviteView({setView, onLogin, showToast, darkMode, players}) {
           <input className="text-input" type="password" value={password} onChange={e=>setPassword(e.target.value)} placeholder="••••••" style={{marginBottom:14}}/>
           <label style={{color:"#9ca3af",fontSize:11,fontWeight:700,display:"block",marginBottom:6}}>TELEMÓVEL (opcional)</label>
           <input className="text-input" type="tel" value={phone} onChange={e=>setPhone(e.target.value)} placeholder="9XX XXX XXX" style={{marginBottom:24}}/>
-          <button className="btn-big btn-green" onClick={handleRegister} disabled={loading}>
-            {loading?"A criar conta...":"✅ Criar conta e entrar"}
-          </button>
+          <button className="btn-big btn-green" onClick={handleRegister} disabled={loading}>{loading?"A criar conta...":"✅ Criar conta e entrar"}</button>
+        </>}
+      </div>
+    </div>
+  );
+}
+
+// ── CRIAR GRUPO VIEW — ecrã 3 permanente ──────────────────────────────────────
+function CriarGrupoView({setView, showToast, onLogin, reloadAll}) {
+  const [step, setStep]               = useState(1);
+  const [groupName, setGroupName]     = useState("");
+  const [location, setLocation]       = useState("");
+  const [time, setTime]               = useState("22:30");
+  const [cost, setCost]               = useState("3");
+  const [adminName, setAdminName]     = useState("");
+  const [adminUsername, setAdminUsername] = useState("");
+  const [adminPassword, setAdminPassword] = useState("");
+  const [adminPhone, setAdminPhone]   = useState("");
+  const [loading, setLoading]         = useState(false);
+  const [inviteCode, setInviteCode]   = useState("");
+  const [createdGroup, setCreatedGroup] = useState(null);
+  const [copied, setCopied]           = useState(false);
+
+  const generateCode = () => {
+    const chars="ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+    let code="HHJ-";
+    for(let i=0;i<4;i++) code+=chars[Math.floor(Math.random()*chars.length)];
+    return code;
+  };
+
+  const handleCreate = async() => {
+    if(!groupName.trim()||!adminName.trim()||!adminUsername.trim()||!adminPassword.trim()){
+      showToast("Preenche todos os campos obrigatórios","err"); return;
+    }
+    setLoading(true);
+    try {
+      const code=generateCode();
+      const{data:group,error:ge}=await supabase.from("groups").insert({name:groupName.trim(),location:location.trim(),time,cost_per_player:Number(cost),invite_code:code}).select().single();
+      if(ge) throw ge;
+      const color=AVATAR_COLORS[Math.floor(Math.random()*AVATAR_COLORS.length)];
+      const{error:pe}=await supabase.from("players").insert({name:adminName.trim(),username:adminUsername.trim().toLowerCase(),password:adminPassword,phone:adminPhone||null,is_admin:true,status:"out",paid:false,is_guest:false,avatar_color:color,group_id:group.id});
+      if(pe) throw pe;
+      const nw=()=>{const d=new Date();const day=d.getDay();const diff=(3-day+7)%7||7;d.setDate(d.getDate()+diff);return d.toISOString().split("T")[0];};
+      await supabase.from("game_info").insert({location:location.trim()||"A definir",date:nw(),time,app_name:groupName.trim(),cost_per_player:Number(cost),group_id:group.id});
+      setInviteCode(code);
+      setCreatedGroup({...group,adminUsername:adminUsername.trim().toLowerCase(),adminPassword});
+      setStep(3);
+    } catch(e) {
+      showToast("Erro ao criar grupo: "+e.message,"err");
+    }
+    setLoading(false);
+  };
+
+  const handleShare = () => {
+    if(navigator.share){
+      navigator.share({title:"Hoje Há Jogo",text:`Junta-te ao grupo "${groupName}"!\nCódigo: ${inviteCode}`,url:"https://hojehajogo.pt"});
+    } else {
+      navigator.clipboard.writeText(inviteCode).then(()=>{ setCopied(true); setTimeout(()=>setCopied(false),2000); showToast("Código copiado ✓"); });
+    }
+  };
+
+  const handleCopy = () => {
+    navigator.clipboard.writeText(inviteCode).then(()=>{ setCopied(true); setTimeout(()=>setCopied(false),2000); showToast("Código copiado ✓"); });
+  };
+
+  const handleEnterApp = async() => {
+    if(!createdGroup) return;
+    setLoading(true);
+    await reloadAll(createdGroup.id);
+    await new Promise(r=>setTimeout(r,600));
+    const ok=await onLogin(createdGroup.adminUsername,createdGroup.adminPassword,createdGroup.id);
+    setLoading(false);
+    if(!ok) window.location.reload();
+  };
+
+  // Passo 3 — código permanente, nunca desaparece
+  if(step===3) return (
+    <div style={{background:"#0a0a0a",minHeight:"100vh",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:"24px"}}>
+      <div style={{textAlign:"center",marginBottom:28}}>
+        <div style={{fontSize:48,marginBottom:12}}>🎉</div>
+        <div style={{color:"white",fontSize:20,fontWeight:700,marginBottom:6}}>Grupo criado com sucesso!</div>
+        <div style={{color:"#6b7280",fontSize:13}}>Partilha este código com os teus jogadores</div>
+      </div>
+
+      <div style={{background:"#111",border:"2px solid #d4af37",borderRadius:20,padding:"28px 32px",textAlign:"center",marginBottom:24,width:"100%",maxWidth:340}}>
+        <div style={{color:"#6b7280",fontSize:11,fontWeight:700,letterSpacing:2,marginBottom:12}}>CÓDIGO DE CONVITE</div>
+        <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:52,color:"#d4af37",letterSpacing:8,lineHeight:1}}>{inviteCode}</div>
+        <div style={{color:"#4b5563",fontSize:13,marginTop:12}}>{groupName}</div>
+      </div>
+
+      <div style={{width:"100%",maxWidth:340,display:"flex",flexDirection:"column",gap:10}}>
+        <button onClick={handleShare} style={{width:"100%",padding:"14px",background:"#d4af37",border:"none",borderRadius:12,color:"#0a0a0a",fontWeight:800,fontSize:14,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:8}}>
+          <Icon name="share" size={16}/> Partilhar código
+        </button>
+        <button onClick={handleCopy} style={{width:"100%",padding:"12px",background:"#1a1a1a",border:"1px solid #2a2a2a",borderRadius:12,color:copied?"#4ade80":"white",fontWeight:700,fontSize:13,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:8}}>
+          <Icon name="copy" size={15}/> {copied?"✓ Copiado!":"Copiar código"}
+        </button>
+        <button onClick={handleEnterApp} disabled={loading} style={{width:"100%",padding:"12px",background:"transparent",border:"none",color:"#4ade80",fontWeight:700,fontSize:14,cursor:"pointer",marginTop:4}}>
+          {loading?"A entrar...":"Entrar na app →"}
+        </button>
+      </div>
+    </div>
+  );
+
+  return (
+    <div style={{background:"#0a0a0a",minHeight:"100vh"}}>
+      <div style={{background:"#111",padding:"16px",borderBottom:"1px solid #1f1f1f",display:"flex",alignItems:"center",gap:10}}>
+        <button onClick={()=>step===1?setView("landing"):setStep(1)} style={{background:"transparent",border:"none",color:"white",cursor:"pointer",padding:4}}><Icon name="left" size={18}/></button>
+        <span style={{color:"white",fontWeight:700,fontSize:16}}>Criar grupo</span>
+        <span style={{color:"#4b5563",fontSize:12,marginLeft:"auto"}}>Passo {step}/2</span>
+      </div>
+      <div style={{padding:"24px 20px"}}>
+        {step===1&&<>
+          <p style={{color:"#6b7280",fontSize:12,marginBottom:20}}>Informações do grupo</p>
+          <label style={{color:"#9ca3af",fontSize:11,fontWeight:700,display:"block",marginBottom:6}}>NOME DO GRUPO *</label>
+          <input className="text-input" value={groupName} onChange={e=>setGroupName(e.target.value)} placeholder="Ex: Futebolada da Quinta" style={{marginBottom:14}}/>
+          <label style={{color:"#9ca3af",fontSize:11,fontWeight:700,display:"block",marginBottom:6}}>LOCAL HABITUAL</label>
+          <input className="text-input" value={location} onChange={e=>setLocation(e.target.value)} placeholder="Ex: Pavilhão Municipal" style={{marginBottom:14}}/>
+          <label style={{color:"#9ca3af",fontSize:11,fontWeight:700,display:"block",marginBottom:6}}>HORA HABITUAL</label>
+          <input className="text-input" type="time" value={time} onChange={e=>setTime(e.target.value)} style={{marginBottom:14}}/>
+          <label style={{color:"#9ca3af",fontSize:11,fontWeight:700,display:"block",marginBottom:6}}>CUSTO POR JOGADOR (€)</label>
+          <input className="text-input" type="number" step="0.5" min="0" value={cost} onChange={e=>setCost(e.target.value)} style={{marginBottom:24}}/>
+          <button className="btn-big btn-green" onClick={()=>{if(!groupName.trim()){showToast("Nome do grupo obrigatório","err");return;}setStep(2);}}>Continuar →</button>
+        </>}
+        {step===2&&<>
+          <p style={{color:"#6b7280",fontSize:12,marginBottom:20}}>Os teus dados como administrador</p>
+          <label style={{color:"#9ca3af",fontSize:11,fontWeight:700,display:"block",marginBottom:6}}>O TEU NOME *</label>
+          <input className="text-input" value={adminName} onChange={e=>setAdminName(e.target.value)} placeholder="Ex: João Silva" style={{marginBottom:14}}/>
+          <label style={{color:"#9ca3af",fontSize:11,fontWeight:700,display:"block",marginBottom:6}}>USERNAME *</label>
+          <input className="text-input" value={adminUsername} onChange={e=>setAdminUsername(e.target.value)} placeholder="Ex: joao" autoCapitalize="none" style={{marginBottom:14}}/>
+          <label style={{color:"#9ca3af",fontSize:11,fontWeight:700,display:"block",marginBottom:6}}>PASSWORD *</label>
+          <input className="text-input" type="password" value={adminPassword} onChange={e=>setAdminPassword(e.target.value)} placeholder="••••••" style={{marginBottom:14}}/>
+          <label style={{color:"#9ca3af",fontSize:11,fontWeight:700,display:"block",marginBottom:6}}>TELEMÓVEL (opcional)</label>
+          <input className="text-input" type="tel" value={adminPhone} onChange={e=>setAdminPhone(e.target.value)} placeholder="9XX XXX XXX" style={{marginBottom:24}}/>
+          <button className="btn-big btn-green" onClick={handleCreate} disabled={loading}>{loading?"A criar grupo...":"🚀 Criar grupo"}</button>
+        </>}
+      </div>
+    </div>
+  );
+}
+
+// ── ENTRAR CONVITE VIEW ───────────────────────────────────────────────────────
+function EntrarConviteView({setView, onLogin, showToast}) {
+  const [code, setCode]         = useState("");
+  const [group, setGroup]       = useState(null);
+  const [step, setStep]         = useState(1);
+  const [name, setName]         = useState("");
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
+  const [phone, setPhone]       = useState("");
+  const [loading, setLoading]   = useState(false);
+
+  const checkCode = async() => {
+    if(!code.trim()){showToast("Insere o código de convite","err");return;}
+    setLoading(true);
+    const{data}=await supabase.from("groups").select("*").eq("invite_code",code.trim().toUpperCase()).single();
+    setLoading(false);
+    if(!data){showToast("Código inválido ou expirado","err");return;}
+    setGroup(data); setStep(2);
+  };
+
+  const handleRegister = async() => {
+    if(!name.trim()||!username.trim()||!password.trim()){showToast("Preenche todos os campos obrigatórios","err");return;}
+    setLoading(true);
+    const{data:existing}=await supabase.from("players").select("id").eq("username",username.trim().toLowerCase()).eq("group_id",group.id);
+    if(existing&&existing.length>0){showToast("Username já existe neste grupo","err");setLoading(false);return;}
+    const color=AVATAR_COLORS[Math.floor(Math.random()*AVATAR_COLORS.length)];
+    const{error}=await supabase.from("players").insert({name:name.trim(),username:username.trim().toLowerCase(),password,phone:phone||null,is_admin:false,status:"out",paid:false,is_guest:false,avatar_color:color,group_id:group.id});
+    if(error){showToast("Erro ao criar conta","err");setLoading(false);return;}
+    showToast("Conta criada! A entrar... 🎉");
+    await new Promise(r=>setTimeout(r,800));
+    const ok=await onLogin(username.trim().toLowerCase(),password,group.id);
+    setLoading(false);
+    if(!ok) window.location.reload();
+  };
+
+  return (
+    <div style={{background:"#0a0a0a",minHeight:"100vh"}}>
+      <div style={{background:"#111",padding:"16px",borderBottom:"1px solid #1f1f1f",display:"flex",alignItems:"center",gap:10}}>
+        <button onClick={()=>step===1?setView("landing"):setStep(1)} style={{background:"transparent",border:"none",color:"white",cursor:"pointer",padding:4}}><Icon name="left" size={18}/></button>
+        <span style={{color:"white",fontWeight:700,fontSize:16}}>Entrar com convite</span>
+      </div>
+      <div style={{padding:"24px 20px"}}>
+        {step===1&&<>
+          <p style={{color:"#6b7280",fontSize:13,marginBottom:24}}>Insere o código que recebeste do organizador</p>
+          <label style={{color:"#9ca3af",fontSize:11,fontWeight:700,display:"block",marginBottom:6}}>CÓDIGO DE CONVITE</label>
+          <input className="text-input" value={code} onChange={e=>setCode(e.target.value.toUpperCase())} placeholder="Ex: HHJ-X7K9" autoCapitalize="characters" style={{marginBottom:24,fontFamily:"'Bebas Neue',cursive",fontSize:20,letterSpacing:3,textAlign:"center"}}/>
+          <button className="btn-big btn-green" onClick={checkCode} disabled={loading}>{loading?"A verificar...":"Verificar código →"}</button>
+        </>}
+        {step===2&&group&&<>
+          <div style={{background:"rgba(212,175,55,0.1)",border:"1px solid #d4af37",borderRadius:12,padding:"14px",marginBottom:24,textAlign:"center"}}>
+            <div style={{color:"#d4af37",fontSize:12,marginBottom:4}}>VAS ENTRAR NO GRUPO</div>
+            <div style={{color:"white",fontSize:18,fontWeight:700}}>{group.name}</div>
+          </div>
+          <label style={{color:"#9ca3af",fontSize:11,fontWeight:700,display:"block",marginBottom:6}}>O TEU NOME *</label>
+          <input className="text-input" value={name} onChange={e=>setName(e.target.value)} placeholder="Ex: Pedro Santos" style={{marginBottom:14}}/>
+          <label style={{color:"#9ca3af",fontSize:11,fontWeight:700,display:"block",marginBottom:6}}>USERNAME *</label>
+          <input className="text-input" value={username} onChange={e=>setUsername(e.target.value)} placeholder="Ex: pedro" autoCapitalize="none" style={{marginBottom:14}}/>
+          <label style={{color:"#9ca3af",fontSize:11,fontWeight:700,display:"block",marginBottom:6}}>PASSWORD *</label>
+          <input className="text-input" type="password" value={password} onChange={e=>setPassword(e.target.value)} placeholder="••••••" style={{marginBottom:14}}/>
+          <label style={{color:"#9ca3af",fontSize:11,fontWeight:700,display:"block",marginBottom:6}}>TELEMÓVEL (opcional)</label>
+          <input className="text-input" type="tel" value={phone} onChange={e=>setPhone(e.target.value)} placeholder="9XX XXX XXX" style={{marginBottom:24}}/>
+          <button className="btn-big btn-green" onClick={handleRegister} disabled={loading}>{loading?"A criar conta...":"✅ Criar conta e entrar"}</button>
         </>}
       </div>
     </div>
@@ -1229,23 +936,13 @@ function EntrarConviteView({setView, onLogin, showToast, darkMode, players}) {
 
 // ── BOTTOM NAV ───────────────────────────────────────────────────────────────
 function BottomNav({view, setView, isAdmin, hasDebts, unreadChat}) {
-  const items = isAdmin ? [
-    {key:"admin", icon:"⚽", label:"Jogo"},
-    {key:"equipas_tab", icon:"🎲", label:"Equipas"},
-    {key:"debts", icon:"💸", label:"Dívidas"},
-    {key:"stats", icon:"📊", label:"Stats"},
-    {key:"profile", icon:"👤", label:"Perfil"},
-  ] : [
-    {key:"player", icon:"⚽", label:"Jogo"},
-    {key:"chat", icon:"💬", label:"Chat"},
-    {key:"debts", icon:"💸", label:"Dívidas"},
-    {key:"stats", icon:"📊", label:"Stats"},
-    {key:"profile", icon:"👤", label:"Perfil"},
-  ];
+  const items = isAdmin
+    ? [{key:"admin",icon:"⚽",label:"Jogo"},{key:"equipas_tab",icon:"🎲",label:"Equipas"},{key:"debts",icon:"💸",label:"Dívidas"},{key:"stats",icon:"📊",label:"Stats"},{key:"profile",icon:"👤",label:"Perfil"}]
+    : [{key:"player",icon:"⚽",label:"Jogo"},{key:"chat",icon:"💬",label:"Chat"},{key:"debts",icon:"💸",label:"Dívidas"},{key:"stats",icon:"📊",label:"Stats"},{key:"profile",icon:"👤",label:"Perfil"}];
   return (
-    <div style={{position:"fixed",bottom:0,left:"50%",transform:"translateX(-50%)",width:"100%",maxWidth:480,background:"#0a0a0a",borderTop:"1px solid #1f2f1f",display:"flex",zIndex:100,paddingBottom:"env(safe-area-inset-bottom)"}}>
+    <div style={{position:"fixed",bottom:0,left:"50%",transform:"translateX(-50%)",width:"100%",maxWidth:480,background:"#0a0a0a",borderTop:"1px solid #1a1a1a",display:"flex",zIndex:100,paddingBottom:"env(safe-area-inset-bottom)"}}>
       {items.map(item=>{
-        const isActive = view===item.key || (item.key==="admin" && ["jogo","dividas_admin"].includes(view));
+        const isActive=view===item.key;
         return (
           <button key={item.key} onClick={()=>setView(item.key)} style={{flex:1,padding:"8px 4px 10px",background:"transparent",border:"none",cursor:"pointer",display:"flex",flexDirection:"column",alignItems:"center",gap:2,position:"relative"}}>
             <span style={{fontSize:18}}>{item.icon}</span>
@@ -1279,98 +976,31 @@ function TeamsReveal({confirmed, players=[], onReassign}) {
   const [phase, setPhase] = useState("idle");
   const [displayNames, setDisplayNames] = useState([]);
   const intervalRef = useRef(null);
-  const allNames = confirmed.map(p=>p.name);
   const startReveal = () => {
-    setPhase("animating");
-    let ticks = 0;
-    const maxTicks = 20;
-    intervalRef.current = setInterval(()=>{
-      const shuffled = [...allNames].sort(()=>Math.random()-0.5);
-      setDisplayNames(shuffled.slice(0,4));
-      ticks++;
-      if(ticks >= maxTicks){
-        clearInterval(intervalRef.current);
-        if(onReassign) onReassign(confirmed);
-        setPhase("revealed");
-      }
-    }, 100);
+    setPhase("animating"); let ticks=0;
+    intervalRef.current=setInterval(()=>{ setDisplayNames([...confirmed].sort(()=>Math.random()-0.5).slice(0,4).map(p=>p.name)); ticks++; if(ticks>=20){clearInterval(intervalRef.current);if(onReassign)onReassign(confirmed);setPhase("revealed");}},100);
   };
   useEffect(()=>()=>clearInterval(intervalRef.current),[]);
-  if(phase==="idle") return (
-    <button onClick={startReveal} style={{width:"100%",padding:"14px",borderRadius:12,border:"2px solid #16a34a",background:"rgba(22,163,74,0.1)",color:"#4ade80",fontFamily:"'Bebas Neue',cursive",fontSize:16,letterSpacing:2,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:8}}>
-      🎲 REVELAR EQUIPAS
-    </button>
-  );
-  if(phase==="animating") return (
-    <div style={{background:"#0a1a0a",borderRadius:12,padding:"20px",textAlign:"center",border:"2px solid #16a34a"}}>
-      <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:20,color:"#4ade80",marginBottom:12,letterSpacing:3}}>🎲 A SORTEAR...</div>
-      <div style={{display:"flex",flexWrap:"wrap",gap:8,justifyContent:"center"}}>
-        {displayNames.map((name,i)=>(
-          <span key={i} style={{background:"rgba(22,163,74,0.2)",borderRadius:20,padding:"4px 14px",fontSize:13,fontWeight:700,color:"#4ade80",border:"1px solid #16a34a"}}>{name}</span>
-        ))}
-      </div>
-    </div>
-  );
-  return (
-    <div>
-      <AutoTeamsDisplay confirmed={confirmed} players={players}/>
-      <button onClick={()=>setPhase("idle")} style={{width:"100%",marginTop:8,padding:"8px",borderRadius:10,border:"1px solid #23362a",background:"transparent",color:"#6b7280",fontSize:11,cursor:"pointer",fontFamily:"'DM Sans',sans-serif"}}>
-        🔄 Sortear novamente
-      </button>
-    </div>
-  );
+  if(phase==="idle") return <button onClick={startReveal} style={{width:"100%",padding:"14px",borderRadius:12,border:"2px solid #16a34a",background:"rgba(22,163,74,0.1)",color:"#4ade80",fontFamily:"'Bebas Neue',cursive",fontSize:16,letterSpacing:2,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:8}}>🎲 REVELAR EQUIPAS</button>;
+  if(phase==="animating") return <div style={{background:"#0a1a0a",borderRadius:12,padding:"20px",textAlign:"center",border:"2px solid #16a34a"}}><div style={{fontFamily:"'Bebas Neue',cursive",fontSize:20,color:"#4ade80",marginBottom:12,letterSpacing:3}}>🎲 A SORTEAR...</div><div style={{display:"flex",flexWrap:"wrap",gap:8,justifyContent:"center"}}>{displayNames.map((name,i)=><span key={i} style={{background:"rgba(22,163,74,0.2)",borderRadius:20,padding:"4px 14px",fontSize:13,fontWeight:700,color:"#4ade80",border:"1px solid #16a34a"}}>{name}</span>)}</div></div>;
+  return <div><AutoTeamsDisplay confirmed={confirmed} players={players}/><button onClick={()=>setPhase("idle")} style={{width:"100%",marginTop:8,padding:"8px",borderRadius:10,border:"1px solid #23362a",background:"transparent",color:"#6b7280",fontSize:11,cursor:"pointer"}}>🔄 Sortear novamente</button></div>;
 }
 
 // ── AUTO TEAMS DISPLAY ───────────────────────────────────────────────────────
 function AutoTeamsDisplay({confirmed, players=[]}) {
   if(!confirmed.length) return null;
-  const teamNames = ["A","B","C"];
-  const groups = {};
-  confirmed.forEach(p => {
-    const pl = (players||[]).find(pl=>pl.id===p.id)||p;
-    const team = pl.team || "SUB";
-    if(!groups[team]) groups[team] = [];
-    groups[team].push({...p, position: pl.position});
-  });
-  const activeTeams = teamNames.filter(t => groups[t]?.length > 0);
-  const subs = groups["SUB"] || [];
-  if(activeTeams.length === 0) return (
-    <div style={{background:"#0f1a0f",borderRadius:12,padding:"12px",textAlign:"center",fontSize:13,color:"#6b7280"}}>
-      As equipas formam-se automaticamente quando os jogadores confirmam presença.
-    </div>
-  );
+  const groups={};
+  confirmed.forEach(p=>{const pl=(players||[]).find(pl=>pl.id===p.id)||p;const team=pl.team||"SUB";if(!groups[team])groups[team]=[];groups[team].push({...p,position:pl.position});});
+  const activeTeams=["A","B","C"].filter(t=>groups[t]?.length>0);
+  const subs=groups["SUB"]||[];
+  if(activeTeams.length===0) return <div style={{background:"#0f1a0f",borderRadius:12,padding:"12px",textAlign:"center",fontSize:13,color:"#6b7280"}}>As equipas formam-se automaticamente quando os jogadores confirmam presença.</div>;
   return (
     <div style={{display:"flex",flexDirection:"column",gap:10}}>
-      {activeTeams.map((teamName, ti) => {
-        const color = TEAM_COLORS[ti];
-        const team = groups[teamName] || [];
-        return (
-          <div key={teamName} style={{background:color.bg,border:`2px solid ${color.border}`,borderRadius:12,padding:"10px 12px"}}>
-            <div style={{fontSize:11,fontWeight:800,color:color.text,letterSpacing:1,marginBottom:8}}>EQUIPA {teamName}</div>
-            <div style={{display:"flex",flexWrap:"wrap",gap:5}}>
-              {team.map(p => (
-                <div key={p.id} style={{display:"flex",alignItems:"center",gap:5,background:p.position==="GR"?"rgba(37,99,235,0.2)":"rgba(0,0,0,0.2)",borderRadius:20,padding:"4px 10px",fontSize:12,fontWeight:700,color:color.text,border:`1px solid ${p.position==="GR"?"#60a5fa":color.border}`}}>
-                  <Avatar player={(players||[]).find(pl=>pl.id===p.id)||p} size={18}/>
-                  {p.name}{p.position==="GR"&&<span style={{fontSize:11}}>🧤</span>}
-                </div>
-              ))}
-            </div>
-          </div>
-        );
+      {activeTeams.map((teamName,ti)=>{
+        const color=TEAM_COLORS[ti],team=groups[teamName]||[];
+        return <div key={teamName} style={{background:color.bg,border:`2px solid ${color.border}`,borderRadius:12,padding:"10px 12px"}}><div style={{fontSize:11,fontWeight:800,color:color.text,letterSpacing:1,marginBottom:8}}>EQUIPA {teamName}</div><div style={{display:"flex",flexWrap:"wrap",gap:5}}>{team.map(p=><div key={p.id} style={{display:"flex",alignItems:"center",gap:5,background:p.position==="GR"?"rgba(37,99,235,0.2)":"rgba(0,0,0,0.2)",borderRadius:20,padding:"4px 10px",fontSize:12,fontWeight:700,color:color.text,border:`1px solid ${p.position==="GR"?"#60a5fa":color.border}`}}><Avatar player={(players||[]).find(pl=>pl.id===p.id)||p} size={18}/>{p.name}{p.position==="GR"&&<span style={{fontSize:11}}>🧤</span>}</div>)}</div></div>;
       })}
-      {subs.length > 0 && (
-        <div style={{background:"rgba(255,255,255,0.05)",border:"1px dashed #4b5563",borderRadius:12,padding:"10px 12px"}}>
-          <div style={{fontSize:11,fontWeight:800,color:"#64748b",letterSpacing:1,marginBottom:6}}>SUPLENTES</div>
-          <div style={{display:"flex",flexWrap:"wrap",gap:5}}>
-            {subs.map(p=>(
-              <div key={p.id} style={{display:"flex",alignItems:"center",gap:5,background:"#1a1f1a",borderRadius:20,padding:"4px 10px",fontSize:12,fontWeight:700,color:"#9ca3af",border:"1px solid #2a332a"}}>
-                <Avatar player={(players||[]).find(pl=>pl.id===p.id)||p} size={18}/>
-                {p.name}
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
+      {subs.length>0&&<div style={{background:"rgba(255,255,255,0.05)",border:"1px dashed #4b5563",borderRadius:12,padding:"10px 12px"}}><div style={{fontSize:11,fontWeight:800,color:"#64748b",letterSpacing:1,marginBottom:6}}>SUPLENTES</div><div style={{display:"flex",flexWrap:"wrap",gap:5}}>{subs.map(p=><div key={p.id} style={{display:"flex",alignItems:"center",gap:5,background:"#1a1f1a",borderRadius:20,padding:"4px 10px",fontSize:12,fontWeight:700,color:"#9ca3af",border:"1px solid #2a332a"}}><Avatar player={(players||[]).find(pl=>pl.id===p.id)||p} size={18}/>{p.name}</div>)}</div></div>}
     </div>
   );
 }
@@ -1382,25 +1012,12 @@ function MvpVote({confirmed=[],mvpVotes=[],currentUserId,gameDate,onVote}) {
   mvpVotes.filter(v=>v.game_date===gameDate).forEach(v=>{counts[v.voted_for_id]=(counts[v.voted_for_id]||0)+1;});
   const maxVotes=Math.max(...Object.values(counts),1);
   return (
-    <div className="card-section" style={{marginBottom:14}}>
+    <div style={{marginBottom:14}}>
       <p className="section-label"><Icon name="star" size={12}/> MVP DA SEMANA</p>
       <div style={{display:"flex",flexDirection:"column",gap:6}}>
         {confirmed.filter(p=>!p.is_guest&&p.id!==currentUserId).map(p=>{
-          const votes=counts[p.id]||0;
-          const isVoted=myVote?.voted_for_id===p.id;
-          return (
-            <button key={p.id} onClick={()=>onVote(p.id)} style={{display:"flex",alignItems:"center",gap:10,background:isVoted?"rgba(217,119,6,0.15)":"#16241c",border:`2px solid ${isVoted?"#d97706":"#23362a"}`,borderRadius:10,padding:"8px 12px",cursor:"pointer",textAlign:"left",width:"100%"}}>
-              <Avatar player={p} size={28}/>
-              <span style={{flex:1,fontSize:13,fontWeight:700,color:"white"}}>{p.name}</span>
-              <div style={{display:"flex",alignItems:"center",gap:6}}>
-                <div style={{width:60,height:6,background:"#0f1a0f",borderRadius:99,overflow:"hidden"}}>
-                  <div style={{width:`${(votes/maxVotes)*100}%`,height:"100%",background:"#d97706",borderRadius:99}}/>
-                </div>
-                <span style={{fontSize:11,fontWeight:800,color:"#d97706",width:14}}>{votes}</span>
-                {isVoted&&<span style={{fontSize:12}}>⭐</span>}
-              </div>
-            </button>
-          );
+          const votes=counts[p.id]||0,isVoted=myVote?.voted_for_id===p.id;
+          return <button key={p.id} onClick={()=>onVote(p.id)} style={{display:"flex",alignItems:"center",gap:10,background:isVoted?"rgba(217,119,6,0.15)":"#16241c",border:`2px solid ${isVoted?"#d97706":"#23362a"}`,borderRadius:10,padding:"8px 12px",cursor:"pointer",textAlign:"left",width:"100%"}}><Avatar player={p} size={28}/><span style={{flex:1,fontSize:13,fontWeight:700,color:"white"}}>{p.name}</span><div style={{display:"flex",alignItems:"center",gap:6}}><div style={{width:60,height:6,background:"#0f1a0f",borderRadius:99,overflow:"hidden"}}><div style={{width:`${(votes/maxVotes)*100}%`,height:"100%",background:"#d97706",borderRadius:99}}/></div><span style={{fontSize:11,fontWeight:800,color:"#d97706",width:14}}>{votes}</span>{isVoted&&<span style={{fontSize:12}}>⭐</span>}</div></button>;
         })}
       </div>
       {myVote&&<p style={{fontSize:11,color:"#6b7280",marginTop:8,textAlign:"center"}}>Votaste em {confirmed.find(p=>p.id===myVote.voted_for_id)?.name}</p>}
@@ -1410,9 +1027,8 @@ function MvpVote({confirmed=[],mvpVotes=[],currentUserId,gameDate,onVote}) {
 
 // ── PIGGYBANK ─────────────────────────────────────────────────────────────────
 function PiggyBankCard({piggybank,history,cost=3}) {
-  const totalReceived = history.reduce((s,g)=>s+(Number(g.collected)||0),0);
-  const gamesPlayed = history.filter(g=>g.players_count>0).length;
-  const totalRent = gamesPlayed * RENT;
+  const totalReceived=history.reduce((s,g)=>s+(Number(g.collected)||0),0);
+  const gamesPlayed=history.filter(g=>g.players_count>0).length;
   return (
     <div style={{marginTop:16}}>
       <p className="section-label"><Icon name="euro" size={12}/> MEALHEIRO DO GRUPO</p>
@@ -1420,9 +1036,9 @@ function PiggyBankCard({piggybank,history,cost=3}) {
         <div style={{fontSize:10,fontWeight:700,letterSpacing:1,opacity:0.8,marginBottom:6}}>SALDO ATUAL</div>
         <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:42,lineHeight:1,color:piggybank>=0?"white":"#fecaca"}}>{piggybank>=0?"+":""}{piggybank}€</div>
         <div style={{display:"flex",gap:16,marginTop:14,paddingTop:14,borderTop:"1px solid rgba(255,255,255,0.2)"}}>
-          <div><div style={{fontSize:9,opacity:0.7,letterSpacing:0.5}}>TOTAL RECEBIDO</div><div style={{fontFamily:"'Bebas Neue',cursive",fontSize:20,color:"#86efac"}}>+{totalReceived}€</div></div>
-          <div><div style={{fontSize:9,opacity:0.7,letterSpacing:0.5}}>PAGO EM ALUGUER</div><div style={{fontFamily:"'Bebas Neue',cursive",fontSize:20,color:"#fca5a5"}}>-{totalRent}€</div></div>
-          <div><div style={{fontSize:9,opacity:0.7,letterSpacing:0.5}}>JOGOS PAGOS</div><div style={{fontFamily:"'Bebas Neue',cursive",fontSize:20,color:"white"}}>{gamesPlayed}</div></div>
+          <div><div style={{fontSize:9,opacity:0.7}}>TOTAL RECEBIDO</div><div style={{fontFamily:"'Bebas Neue',cursive",fontSize:20,color:"#86efac"}}>+{totalReceived}€</div></div>
+          <div><div style={{fontSize:9,opacity:0.7}}>PAGO EM ALUGUER</div><div style={{fontFamily:"'Bebas Neue',cursive",fontSize:20,color:"#fca5a5"}}>-{gamesPlayed*RENT}€</div></div>
+          <div><div style={{fontSize:9,opacity:0.7}}>JOGOS</div><div style={{fontFamily:"'Bebas Neue',cursive",fontSize:20,color:"white"}}>{gamesPlayed}</div></div>
         </div>
       </div>
       <div style={{fontSize:11,color:"#6b7280",textAlign:"center"}}>Cada jogo desconta {RENT}€ do aluguer · {cost}€ por jogador</div>
@@ -1440,16 +1056,13 @@ function ConfirmedList({confirmed=[],onTogglePaid,isAdmin,debts=[],players=[],co
         const pl=(players||[]).find(pl=>pl.id===p.id)||p;
         return (
           <div key={p.id} className={`list-row ${p.is_guest?"row-guest":""}`}>
-            <span className="list-num">{i+1}</span>
-            <Avatar player={pl} size={28}/>
+            <span className="list-num">{i+1}</span><Avatar player={pl} size={28}/>
             <div className="list-info">
               <span className="list-name">{p.name}</span>
               {p.is_guest&&<span className="guest-sub">convidado de {p.invited_by}</span>}
-              {debt>0&&<span style={{fontSize:10,color:"#dc2626",fontWeight:700}}>⚠️ deve {debt}€ anteriores</span>}
+              {debt>0&&<span style={{fontSize:10,color:"#dc2626",fontWeight:700}}>⚠️ deve {debt}€</span>}
             </div>
-            {isAdmin
-              ?<button className={`paid-btn ${p.paid?"paid-yes":"paid-no"}`} onClick={()=>onTogglePaid(p.id)}>{p.paid?<><Icon name="check" size={11}/> Pago</>:`Deve ${cost}€`}</button>
-              :<span className={`paid-chip ${p.paid?"paid-yes":"paid-no"}`}>{p.paid?"Pago ✓":`Deve ${cost}€`}</span>}
+            {isAdmin?<button className={`paid-btn ${p.paid?"paid-yes":"paid-no"}`} onClick={()=>onTogglePaid(p.id)}>{p.paid?<><Icon name="check" size={11}/> Pago</>:`Deve ${cost}€`}</button>:<span className={`paid-chip ${p.paid?"paid-yes":"paid-no"}`}>{p.paid?"Pago ✓":`Deve ${cost}€`}</span>}
           </div>
         );
       })}
@@ -1458,13 +1071,10 @@ function ConfirmedList({confirmed=[],onTogglePaid,isAdmin,debts=[],players=[],co
 }
 
 // ── DEBTS VIEW ───────────────────────────────────────────────────────────────
-function DebtsView({debts=[], members=[], player, darkMode, onBack}) {
-  const myDebts = debts.filter(d=>d.player_id===player.id);
-  const myTotal = myDebts.reduce((s,d)=>s+Number(d.amount),0);
-  const othersDebts = (members||[])
-    .filter(m=>m.id!==player.id)
-    .map(m=>({...m, total:debts.filter(d=>d.player_id===m.id).reduce((s,d)=>s+Number(d.amount),0)}))
-    .filter(m=>m.total>0);
+function DebtsView({debts=[], members=[], player, onBack}) {
+  const myDebts=debts.filter(d=>d.player_id===player.id);
+  const myTotal=myDebts.reduce((s,d)=>s+Number(d.amount),0);
+  const othersDebts=(members||[]).filter(m=>m.id!==player.id).map(m=>({...m,total:debts.filter(d=>d.player_id===m.id).reduce((s,d)=>s+Number(d.amount),0)})).filter(m=>m.total>0);
   return (
     <div className="screen">
       <div style={{background:"linear-gradient(160deg,#1a1a0a,#0a0a0a)",padding:"16px 16px 20px",borderBottom:"2px solid #d4af37"}}>
@@ -1475,107 +1085,44 @@ function DebtsView({debts=[], members=[], player, darkMode, onBack}) {
       </div>
       <div className="body">
         <p className="section-label"><Icon name="warn" size={12}/> AS MINHAS DÍVIDAS</p>
-        {myTotal===0 ? (
-          <div style={{background:"rgba(22,163,74,0.1)",border:"1px solid rgba(22,163,74,0.3)",borderRadius:12,padding:"16px",textAlign:"center",marginBottom:14}}>
-            <div style={{fontSize:24,marginBottom:6}}>🎉</div>
-            <div style={{fontSize:13,fontWeight:700,color:"#4ade80"}}>Não deves nada!</div>
-          </div>
-        ) : (
-          <div style={{background:"rgba(239,68,68,0.1)",border:"2px solid #dc2626",borderRadius:14,padding:"14px",marginBottom:14}}>
-            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}}>
-              <span style={{fontSize:13,fontWeight:700,color:"white"}}>Total em dívida</span>
-              <span style={{fontFamily:"'Bebas Neue',cursive",fontSize:28,color:"#f87171"}}>{myTotal}€</span>
-            </div>
-            {myDebts.map(d=>(
-              <div key={d.id} style={{background:"rgba(0,0,0,0.2)",borderRadius:8,padding:"8px 12px",marginBottom:6,display:"flex",justifyContent:"space-between"}}>
-                <span style={{fontSize:12,color:"#9ca3af"}}>{d.description}</span>
-                <span style={{fontSize:12,fontWeight:700,color:"#f87171"}}>{d.amount}€</span>
-              </div>
-            ))}
-          </div>
-        )}
-        {othersDebts.length>0&&<>
-          <p className="section-label" style={{marginTop:8}}><Icon name="people" size={12}/> DÍVIDAS DO GRUPO</p>
-          <div style={{display:"flex",flexDirection:"column",gap:6}}>
-            {othersDebts.map(m=>(
-              <div key={m.id} style={{display:"flex",alignItems:"center",gap:10,background:"#16241c",border:"1px solid #23362a",borderRadius:10,padding:"10px 14px"}}>
-                <Avatar player={m} size={28}/>
-                <span style={{flex:1,fontSize:13,fontWeight:700,color:"white"}}>{m.name}</span>
-                <span style={{fontFamily:"'Bebas Neue',cursive",fontSize:20,color:"#f87171"}}>{m.total}€</span>
-              </div>
-            ))}
-          </div>
-        </>}
-        {othersDebts.length===0&&myTotal===0&&(
-          <div style={{textAlign:"center",paddingTop:20,color:"#6b7280",fontSize:13}}>🎉 O grupo está quite!</div>
-        )}
+        {myTotal===0
+          ?<div style={{background:"rgba(22,163,74,0.1)",border:"1px solid rgba(22,163,74,0.3)",borderRadius:12,padding:"16px",textAlign:"center",marginBottom:14}}><div style={{fontSize:24,marginBottom:6}}>🎉</div><div style={{fontSize:13,fontWeight:700,color:"#4ade80"}}>Não deves nada!</div></div>
+          :<div style={{background:"rgba(239,68,68,0.1)",border:"2px solid #dc2626",borderRadius:14,padding:"14px",marginBottom:14}}><div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}}><span style={{fontSize:13,fontWeight:700,color:"white"}}>Total em dívida</span><span style={{fontFamily:"'Bebas Neue',cursive",fontSize:28,color:"#f87171"}}>{myTotal}€</span></div>{myDebts.map(d=><div key={d.id} style={{background:"rgba(0,0,0,0.2)",borderRadius:8,padding:"8px 12px",marginBottom:6,display:"flex",justifyContent:"space-between"}}><span style={{fontSize:12,color:"#9ca3af"}}>{d.description}</span><span style={{fontSize:12,fontWeight:700,color:"#f87171"}}>{d.amount}€</span></div>)}</div>}
+        {othersDebts.length>0&&<><p className="section-label" style={{marginTop:8}}><Icon name="people" size={12}/> DÍVIDAS DO GRUPO</p><div style={{display:"flex",flexDirection:"column",gap:6}}>{othersDebts.map(m=><div key={m.id} style={{display:"flex",alignItems:"center",gap:10,background:"#16241c",border:"1px solid #23362a",borderRadius:10,padding:"10px 14px"}}><Avatar player={m} size={28}/><span style={{flex:1,fontSize:13,fontWeight:700,color:"white"}}>{m.name}</span><span style={{fontFamily:"'Bebas Neue',cursive",fontSize:20,color:"#f87171"}}>{m.total}€</span></div>)}</div></>}
+        {othersDebts.length===0&&myTotal===0&&<div style={{textAlign:"center",paddingTop:20,color:"#6b7280",fontSize:13}}>🎉 O grupo está quite!</div>}
       </div>
     </div>
   );
 }
 
 // ── STATS VIEW ───────────────────────────────────────────────────────────────
-function StatsView({members=[],history=[],debts=[],mvpVotes=[],piggybank=0,player,darkMode,onBack}) {
+function StatsView({members=[],history=[],debts=[],mvpVotes=[],player,onBack}) {
   const [tab,setTab]=useState("pessoal");
-  const [sortBy,setSortBy]=useState("games");
   const mvpCounts={};
   history.forEach(g=>{if(g.mvp_name)mvpCounts[g.mvp_name]=(mvpCounts[g.mvp_name]||0)+1;});
   const totalGames=history.length;
-  const ranked=[...(members||[])].filter(p=>!p.is_guest).sort((a,b)=>{
-    if(sortBy==="mvp") return (mvpCounts[b.name]||0)-(mvpCounts[a.name]||0);
-    if(sortBy==="pct") return ((b.total_games||0)/Math.max(totalGames,1))-((a.total_games||0)/Math.max(totalGames,1));
-    return (b.total_games||0)-(a.total_games||0);
-  });
-  const myDebt=(debts||[]).filter(d=>d.player_id===player.id).reduce((s,d)=>s+Number(d.amount),0);
+  const ranked=[...members].filter(p=>!p.is_guest).sort((a,b)=>(b.total_games||0)-(a.total_games||0));
+  const myDebt=debts.filter(d=>d.player_id===player.id).reduce((s,d)=>s+Number(d.amount),0);
   const myPct=totalGames>0?Math.round(((player.total_games||0)/totalGames)*100):0;
   const myMvps=mvpCounts[player.name]||0;
-  const stats=[
-    {icon:"⚽",label:"Jogos",value:player.total_games||0,color:"#16a34a"},
-    {icon:"⭐",label:"MVPs",value:myMvps,color:"#d97706"},
-    {icon:"📈",label:"Presença",value:`${myPct}%`,color:"#2563eb"},
-    {icon:"🔥",label:"Série Atual",value:player.current_streak||0,color:"#dc2626"},
-    {icon:"🏆",label:"Melhor Série",value:player.best_streak||0,color:"#7c3aed"},
-    {icon:"💰",label:"Total Pago",value:`${player.total_paid||0}€`,color:"#0891b2"},
-  ];
+  const stats=[{icon:"⚽",label:"Jogos",value:player.total_games||0,color:"#16a34a"},{icon:"⭐",label:"MVPs",value:myMvps,color:"#d97706"},{icon:"📈",label:"Presença",value:`${myPct}%`,color:"#2563eb"},{icon:"🔥",label:"Série Atual",value:player.current_streak||0,color:"#dc2626"},{icon:"🏆",label:"Melhor Série",value:player.best_streak||0,color:"#7c3aed"},{icon:"💰",label:"Total Pago",value:`${player.total_paid||0}€`,color:"#0891b2"}];
   return (
     <div className="screen">
       <div style={{background:"#166534",padding:"16px 16px 14px",borderBottom:"2px solid #d4af37"}}>
         <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:12}}>
           <button className="field-nav-btn" onClick={onBack}><Icon name="left" size={14}/></button>
-          <div style={{display:"flex",alignItems:"center",gap:10,flex:1}}>
-            <Avatar player={player} size={36}/>
-            <div>
-              <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:20,color:"white",letterSpacing:2}}>{player.name}</div>
-              <div style={{fontSize:10,color:"rgba(255,255,255,0.6)"}}>{player.is_admin?"Admin ★":player.position==="GR"?"🧤 GR":"⚽ Polivalente"}{myDebt>0?` · ⚠️ ${myDebt}€ em dívida`:""}</div>
-            </div>
-          </div>
+          <Avatar player={player} size={36}/>
+          <div><div style={{fontFamily:"'Bebas Neue',cursive",fontSize:20,color:"white",letterSpacing:2}}>{player.name}</div><div style={{fontSize:10,color:"rgba(255,255,255,0.6)"}}>{player.is_admin?"Admin ★":player.position==="GR"?"🧤 GR":"⚽ Polivalente"}{myDebt>0?` · ⚠️ ${myDebt}€ em dívida`:""}</div></div>
         </div>
         <div style={{display:"flex",gap:2,background:"rgba(0,0,0,0.2)",borderRadius:10,padding:3}}>
           {[["pessoal","⚽ Pessoal"],["ranking","🏆 Ranking"],["mvp","⭐ Hall of Fame"]].map(([k,l])=>(
-            <button key={k} onClick={()=>setTab(k)} style={{flex:1,padding:"6px 4px",borderRadius:8,border:"none",cursor:"pointer",background:tab===k?"#d4af37":"transparent",color:tab===k?"#14532d":"rgba(255,255,255,0.7)",fontSize:11,fontWeight:700,transition:"all .15s"}}>
-              {l}
-            </button>
+            <button key={k} onClick={()=>setTab(k)} style={{flex:1,padding:"6px 4px",borderRadius:8,border:"none",cursor:"pointer",background:tab===k?"#d4af37":"transparent",color:tab===k?"#14532d":"rgba(255,255,255,0.7)",fontSize:11,fontWeight:700}}>{l}</button>
           ))}
         </div>
       </div>
       <div className="body">
-        {tab==="pessoal"&&(
-          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:8}}>
-            {stats.map((s,i)=>(
-              <div key={i} style={{background:"#16241c",border:"1px solid #23362a",borderRadius:12,padding:"14px 8px",textAlign:"center"}}>
-                <div style={{fontSize:20,marginBottom:6}}>{s.icon}</div>
-                <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:26,color:s.color,lineHeight:1}}>{s.value}</div>
-                <div style={{fontSize:9,color:"#6b7280",fontWeight:700,letterSpacing:1,marginTop:4}}>{s.label}</div>
-              </div>
-            ))}
-          </div>
-        )}
-        {tab==="ranking"&&(
-          <>
-            <p className="section-label"><Icon name="trophy" size={12}/> RANKING DE PRESENÇAS</p>
-            <ExpandableRanking ranked={ranked} mvpCounts={mvpCounts} totalGames={totalGames} currentPlayer={player} darkMode={darkMode}/>
-          </>
-        )}
+        {tab==="pessoal"&&<div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:8}}>{stats.map((s,i)=><div key={i} style={{background:"#16241c",border:"1px solid #23362a",borderRadius:12,padding:"14px 8px",textAlign:"center"}}><div style={{fontSize:20,marginBottom:6}}>{s.icon}</div><div style={{fontFamily:"'Bebas Neue',cursive",fontSize:26,color:s.color,lineHeight:1}}>{s.value}</div><div style={{fontSize:9,color:"#6b7280",fontWeight:700,letterSpacing:1,marginTop:4}}>{s.label}</div></div>)}</div>}
+        {tab==="ranking"&&<><p className="section-label"><Icon name="trophy" size={12}/> RANKING DE PRESENÇAS</p><ExpandableRanking ranked={ranked} mvpCounts={mvpCounts} totalGames={totalGames} currentPlayer={player}/></>}
         {tab==="mvp"&&<HallOfFameMVP history={history} members={members}/>}
       </div>
     </div>
@@ -1583,13 +1130,13 @@ function StatsView({members=[],history=[],debts=[],mvpVotes=[],piggybank=0,playe
 }
 
 // ── CHAT VIEW ────────────────────────────────────────────────────────────────
-function ChatView({messages=[],players=[],player,darkMode,onSendMessage,onBack}) {
+function ChatView({messages=[],players=[],player,onSendMessage,onBack}) {
   const [text,setText]=useState("");
   const bottomRef=useRef(null);
   useEffect(()=>{bottomRef.current?.scrollIntoView({behavior:"smooth"});},[messages]);
   return (
     <div className="screen" style={{height:"100vh",display:"flex",flexDirection:"column"}}>
-      <div style={{background:"#166534",padding:"14px 16px",borderBottom:"3px solid white",flexShrink:0}}>
+      <div style={{background:"#166534",padding:"14px 16px",borderBottom:"3px solid #d4af37",flexShrink:0}}>
         <div style={{display:"flex",alignItems:"center",gap:10}}>
           <button className="field-nav-btn" onClick={onBack}><Icon name="left" size={14}/></button>
           <span style={{fontFamily:"'Bebas Neue',cursive",fontSize:20,color:"white",letterSpacing:2}}>CHAT DO GRUPO</span>
@@ -1605,9 +1152,7 @@ function ChatView({messages=[],players=[],player,darkMode,onSendMessage,onBack})
               {!isMe&&<Avatar player={pl} size={28}/>}
               <div style={{maxWidth:"75%"}}>
                 {!isMe&&<div style={{fontSize:10,color:"#6b7280",marginBottom:3,marginLeft:4}}>{msg.player_name}</div>}
-                <div style={{background:isMe?"#16a34a":"#16241c",color:"white",borderRadius:isMe?"14px 14px 4px 14px":"14px 14px 14px 4px",padding:"8px 12px",fontSize:13,fontWeight:500,border:isMe?"none":"1px solid #23362a"}}>
-                  {msg.message}
-                </div>
+                <div style={{background:isMe?"#16a34a":"#16241c",color:"white",borderRadius:isMe?"14px 14px 4px 14px":"14px 14px 14px 4px",padding:"8px 12px",fontSize:13,fontWeight:500,border:isMe?"none":"1px solid #23362a"}}>{msg.message}</div>
                 <div style={{fontSize:9,color:"#9ca3af",marginTop:2,textAlign:isMe?"right":"left"}}>{formatTime(new Date(msg.created_at).getTime())}</div>
               </div>
             </div>
@@ -1624,7 +1169,7 @@ function ChatView({messages=[],players=[],player,darkMode,onSendMessage,onBack})
 }
 
 // ── PROFILE VIEW ─────────────────────────────────────────────────────────────
-function ProfileView({player,darkMode,onUpdateProfile,onBack,onLogout,onSwitchAccount}) {
+function ProfileView({player,onUpdateProfile,onBack,onLogout,onSwitchAccount}) {
   const [newName,setNewName]=useState(player.name);
   const [newPhone,setNewPhone]=useState(player.phone||"");
   const [newPw,setNewPw]=useState("");
@@ -1633,7 +1178,7 @@ function ProfileView({player,darkMode,onUpdateProfile,onBack,onLogout,onSwitchAc
   const [color,setColor]=useState(player.avatar_color||AVATAR_COLORS[0]);
   return (
     <div className="screen">
-      <div style={{background:"#166534",padding:"14px 16px",borderBottom:"3px solid white"}}>
+      <div style={{background:"#166534",padding:"14px 16px",borderBottom:"2px solid #d4af37"}}>
         <div style={{display:"flex",alignItems:"center",gap:10}}>
           <button className="field-nav-btn" onClick={onBack}><Icon name="left" size={14}/></button>
           <span style={{fontFamily:"'Bebas Neue',cursive",fontSize:20,color:"white",letterSpacing:2}}>O MEU PERFIL</span>
@@ -1641,31 +1186,25 @@ function ProfileView({player,darkMode,onUpdateProfile,onBack,onLogout,onSwitchAc
       </div>
       <div className="body">
         <div style={{display:"flex",flexDirection:"column",alignItems:"center",marginBottom:20}}>
-          <Avatar player={{...player,avatar_color:color}} size={72} style={{marginBottom:12,boxShadow:"0 4px 20px rgba(0,0,0,0.2)"}}/>
+          <Avatar player={{...player,avatar_color:color}} size={72} style={{marginBottom:12}}/>
           <p className="section-label" style={{marginBottom:8}}>COR DO AVATAR</p>
           <div style={{display:"flex",gap:8,flexWrap:"wrap",justifyContent:"center"}}>
-            {AVATAR_COLORS.map(c=>(
-              <button key={c} onClick={()=>setColor(c)} style={{width:32,height:32,borderRadius:"50%",background:c,border:color===c?"3px solid white":"2px solid transparent",cursor:"pointer",flexShrink:0}}/>
-            ))}
+            {AVATAR_COLORS.map(c=><button key={c} onClick={()=>setColor(c)} style={{width:32,height:32,borderRadius:"50%",background:c,border:color===c?"3px solid white":"2px solid transparent",cursor:"pointer",flexShrink:0}}/>)}
           </div>
         </div>
         <div style={{background:"#16241c",border:"2px solid #23362a",borderRadius:14,padding:16,display:"flex",flexDirection:"column",gap:10}}>
           <label className="field-label">Nome</label>
           <input className="text-input" value={newName} onChange={e=>setNewName(e.target.value)}/>
-          <label className="field-label"><Icon name="key" size={11}/> Telemóvel</label>
+          <label className="field-label">Telemóvel</label>
           <input className="text-input" type="tel" value={newPhone} onChange={e=>setNewPhone(e.target.value)} placeholder="9XX XXX XXX"/>
           <label className="field-label">Nova password</label>
-          <div className="pw-row">
+          <div style={{display:"flex",gap:8}}>
             <input className="text-input" type={showPw?"text":"password"} value={newPw} onChange={e=>setNewPw(e.target.value)} placeholder="Nova password..."/>
             <button className="icon-ghost" onClick={()=>setShowPw(v=>!v)}><Icon name={showPw?"eyeoff":"eye"} size={15}/></button>
           </div>
           <label className="field-label">Confirmar password</label>
           <input className="text-input" type={showPw?"text":"password"} value={newPwC} onChange={e=>setNewPwC(e.target.value)} placeholder="Repetir password..."/>
-          <button className="btn-primary" style={{justifyContent:"center"}} onClick={()=>{
-            if(newPw&&newPw!==newPwC){alert("As passwords não coincidem!");return;}
-            onUpdateProfile(newName,newPw,color,newPhone);
-            setTimeout(()=>onLogout(),800);
-          }}><Icon name="check" size={15}/> GUARDAR E SAIR</button>
+          <button className="btn-primary" style={{justifyContent:"center"}} onClick={()=>{if(newPw&&newPw!==newPwC){alert("As passwords não coincidem!");return;}onUpdateProfile(newName,newPw,color,newPhone);setTimeout(()=>onLogout(),800);}}><Icon name="check" size={15}/> GUARDAR E SAIR</button>
           <p style={{fontSize:11,color:"#6b7280",textAlign:"center"}}>💡 Após guardar volta a entrar com os novos dados.</p>
         </div>
         <button onClick={onSwitchAccount} style={{width:"100%",marginTop:14,padding:"11px",borderRadius:10,border:"2px solid rgba(239,68,68,0.3)",background:"transparent",color:"#f87171",fontWeight:800,fontSize:12,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:6}}>
@@ -1677,112 +1216,61 @@ function ProfileView({player,darkMode,onUpdateProfile,onBack,onLogout,onSwitchAc
 }
 
 // ── PLAYER VIEW ──────────────────────────────────────────────────────────────
-function PlayerView({gameInfo,cdStr,confirmed,waiting,notYet,guests,spotsLeft,players,members,debts,messages,mvpVotes,history,piggybank,attendance,viewingDate,setViewingDate,historyGame,isViewingHistory,effectiveDate,darkMode,setDarkMode,player,onToggle,onAddGuest,onRemoveGuest,onUpdateProfile,onVoteMvp,onSendMessage,onUpdatePosition,onLogout,setView,view}) {
-  const isIn=player.status==="in", isWait=player.status==="wait";
-  const [confirming, setConfirming]=useState(false);
+function PlayerView({gameInfo,cdStr,confirmed,waiting,notYet,guests,spotsLeft,players,members,debts,messages,mvpVotes,history,piggybank,attendance,viewingDate,setViewingDate,historyGame,isViewingHistory,effectiveDate,player,onToggle,onAddGuest,onRemoveGuest,onUpdateProfile,onVoteMvp,onSendMessage,onUpdatePosition,onLogout,setView,view}) {
+  const isIn=player.status==="in",isWait=player.status==="wait";
+  const [confirming,setConfirming]=useState(false);
   const handleToggle=async()=>{setConfirming(true);await onToggle();setTimeout(()=>setConfirming(false),600);};
   const waitPos=waiting.findIndex(p=>p.id===player.id)+1;
   const myGuests=guests.filter(g=>g.invited_by_id===player.id);
-  const myDebts=debts.filter(d=>d.player_id===player.id);
-  const totalDebt=myDebts.reduce((s,d)=>s+Number(d.amount),0);
+  const totalDebt=debts.filter(d=>d.player_id===player.id).reduce((s,d)=>s+Number(d.amount),0);
   const [guestName,setGuestName]=useState("");
-
   return (
     <div className="screen">
-      <FieldHeader {...{gameInfo,cdStr,confirmed,notYet,waiting,viewingDate,setViewingDate,historyGame,isViewingHistory,effectiveDate,darkMode,setDarkMode,attendance}}
-        extraRight={
-          <button className="field-nav-btn" style={{position:"relative"}} onClick={()=>setView("chat")}>
-            <Icon name="chat" size={13}/>
-            {messages.length>0&&<span style={{position:"absolute",top:-3,right:-3,background:"#dc2626",borderRadius:"50%",width:8,height:8}}/>}
-          </button>
-        }
+      <FieldHeader {...{gameInfo,cdStr,confirmed,notYet,waiting,viewingDate,setViewingDate,historyGame,isViewingHistory,effectiveDate,attendance}}
+        extraRight={<button className="field-nav-btn" style={{position:"relative"}} onClick={()=>setView("chat")}><Icon name="chat" size={13}/>{messages.length>0&&<span style={{position:"absolute",top:-3,right:-3,background:"#dc2626",borderRadius:"50%",width:8,height:8}}/>}</button>}
       />
       <div className="body">
         <div className="topbar">
           <span className="topbar-name">Olá, <strong>{player.name}</strong></span>
-          <div style={{display:"flex",gap:4}}>
-            <button className="icon-ghost" onClick={onLogout}><Icon name="logout" size={16}/></button>
-          </div>
+          <button className="icon-ghost" onClick={onLogout}><Icon name="logout" size={16}/></button>
         </div>
-
         {totalDebt>0&&(
           <button onClick={()=>setView("debts")} style={{width:"100%",background:"rgba(217,119,6,0.15)",border:"2px solid #d97706",borderRadius:12,padding:"10px 14px",marginBottom:14,display:"flex",alignItems:"center",gap:10,cursor:"pointer",textAlign:"left"}}>
-            <Icon name="warn" size={18}/>
-            <div style={{flex:1}}>
-              <div style={{fontSize:13,fontWeight:800,color:"#fbbf24"}}>Tens {totalDebt}€ em dívida</div>
-              <div style={{fontSize:11,color:"#fcd34d"}}>Carrega para ver detalhes</div>
-            </div>
-            <Icon name="right" size={14}/>
+            <Icon name="warn" size={18}/><div style={{flex:1}}><div style={{fontSize:13,fontWeight:800,color:"#fbbf24"}}>Tens {totalDebt}€ em dívida</div><div style={{fontSize:11,color:"#fcd34d"}}>Carrega para ver detalhes</div></div><Icon name="right" size={14}/>
           </button>
         )}
-
         <div className={`status-banner sb-${isIn?"in":isWait?"wait":"out"}`}>
           <span className="sb-icon">{isIn?"✅":isWait?"⏳":"⚽"}</span>
-          <div>
-            <div className="sb-title">{isIn?"Confirmado!":isWait?`Lista de espera #${waitPos}`:"Ainda não respondeste"}</div>
-            <div className="sb-sub">{isIn?"Estás dentro":isWait?"Aguarda vaga":`${spotsLeft} vagas`}</div>
-          </div>
+          <div><div className="sb-title">{isIn?"Confirmado!":isWait?`Lista de espera #${waitPos}`:"Ainda não respondeste"}</div><div className="sb-sub">{isIn?"Estás dentro":isWait?"Aguarda vaga":`${spotsLeft} vagas`}</div></div>
         </div>
-
         <button className={`btn-big ${isIn||isWait?"btn-red":"btn-green"}`} onClick={handleToggle} style={{opacity:confirming?0.7:1,transform:confirming?"scale(0.97)":"scale(1)",transition:"all 0.15s"}}>
           {confirming?"⏳ A processar...":(isIn||isWait?<><Icon name="x" size={18}/> CANCELAR PRESENÇA</>:<><Icon name="check" size={18}/> CONFIRMAR PRESENÇA</>)}
         </button>
-
         <RotatingHighlights members={members} history={history} mvpVotes={mvpVotes} confirmed={confirmed} gameInfo={gameInfo}/>
         <GroupStatusCard confirmed={confirmed} notYet={notYet} members={members} players={players}/>
-
         <div style={{display:"flex",gap:8,marginBottom:14,alignItems:"center"}}>
           <span style={{fontSize:11,fontWeight:700,color:"#6b7280",letterSpacing:1}}>POSIÇÃO:</span>
-          <button onClick={()=>onUpdatePosition("Polivalente")} style={{flex:1,padding:"8px",borderRadius:10,border:`2px solid ${(player.position||"Polivalente")==="Polivalente"?"#16a34a":"#23362a"}`,background:(player.position||"Polivalente")==="Polivalente"?"rgba(22,163,74,0.2)":"#16241c",fontWeight:800,fontSize:13,cursor:"pointer",color:(player.position||"Polivalente")==="Polivalente"?"#4ade80":"#6b7280"}}>
-            ⚽ Polivalente
-          </button>
-          <button onClick={()=>onUpdatePosition("GR")} style={{flex:1,padding:"8px",borderRadius:10,border:`2px solid ${player.position==="GR"?"#2563eb":"#23362a"}`,background:player.position==="GR"?"rgba(37,99,235,0.2)":"#16241c",fontWeight:800,fontSize:13,cursor:"pointer",color:player.position==="GR"?"#60a5fa":"#6b7280"}}>
-            🧤 Guarda-Redes
-          </button>
+          <button onClick={()=>onUpdatePosition("Polivalente")} style={{flex:1,padding:"8px",borderRadius:10,border:`2px solid ${(player.position||"Polivalente")==="Polivalente"?"#16a34a":"#23362a"}`,background:(player.position||"Polivalente")==="Polivalente"?"rgba(22,163,74,0.2)":"#16241c",fontWeight:800,fontSize:13,cursor:"pointer",color:(player.position||"Polivalente")==="Polivalente"?"#4ade80":"#6b7280"}}>⚽ Polivalente</button>
+          <button onClick={()=>onUpdatePosition("GR")} style={{flex:1,padding:"8px",borderRadius:10,border:`2px solid ${player.position==="GR"?"#2563eb":"#23362a"}`,background:player.position==="GR"?"rgba(37,99,235,0.2)":"#16241c",fontWeight:800,fontSize:13,cursor:"pointer",color:player.position==="GR"?"#60a5fa":"#6b7280"}}>🧤 Guarda-Redes</button>
         </div>
-
-        {confirmed.length>=MIN_PLAYERS&&confirmed.some(p=>{const pl=(players||[]).find(pl=>pl.id===p.id); return pl?.team&&pl.team!=="SUB";})&&(
+        {confirmed.length>=MIN_PLAYERS&&confirmed.some(p=>{const pl=(players||[]).find(pl=>pl.id===p.id);return pl?.team&&pl.team!=="SUB";})&&(
           <div style={{marginBottom:14}}>
-            <div style={{background:"rgba(22,163,74,0.1)",border:"1px solid rgba(22,163,74,0.3)",borderRadius:12,padding:"10px 14px",marginBottom:8,fontSize:12,color:"#4ade80",fontWeight:700,textAlign:"center"}}>
-              {confirmed.length>=15?"🏆 3 equipas de 5":`⚽ 2 equipas${confirmed.length%2!==0?" + suplentes":""}`}
-            </div>
+            <div style={{background:"rgba(22,163,74,0.1)",border:"1px solid rgba(22,163,74,0.3)",borderRadius:12,padding:"10px 14px",marginBottom:8,fontSize:12,color:"#4ade80",fontWeight:700,textAlign:"center"}}>{confirmed.length>=15?"🏆 3 equipas de 5":`⚽ 2 equipas${confirmed.length%2!==0?" + suplentes":""}`}</div>
             <AutoTeamsDisplay confirmed={confirmed} players={players}/>
           </div>
         )}
-
-        {confirmed.length>=MIN_PLAYERS&&(
-          <ExpandableCard title="⭐ MVP DA SEMANA" defaultOpen={false}>
-            <MvpVote confirmed={confirmed} mvpVotes={mvpVotes} currentUserId={player.id} gameDate={gameInfo.date} onVote={onVoteMvp}/>
-          </ExpandableCard>
-        )}
-
-        <ExpandableCard title={`📋 LISTA DO JOGO (${confirmed.length})`} defaultOpen={false}>
+        {confirmed.length>=MIN_PLAYERS&&<ExpandableCard title="⭐ MVP DA SEMANA"><MvpVote confirmed={confirmed} mvpVotes={mvpVotes} currentUserId={player.id} gameDate={gameInfo.date} onVote={onVoteMvp}/></ExpandableCard>}
+        <ExpandableCard title={`📋 LISTA DO JOGO (${confirmed.length})`}>
           <ConfirmedList confirmed={confirmed} debts={debts} players={players} cost={gameInfo.cost_per_player||COST}/>
-          {waiting.length>0&&<>
-            <p className="section-label" style={{marginTop:10}}><Icon name="clock" size={12}/> LISTA DE ESPERA</p>
-            <div className="player-list">{waiting.map((p,i)=><div key={p.id} className="list-row"><span className="list-num">{i+1}</span><Avatar player={players.find(pl=>pl.id===p.id)||p} size={28}/><span className="list-name" style={{marginLeft:4}}>{p.name}</span></div>)}</div>
+          {waiting.length>0&&<><p className="section-label" style={{marginTop:10}}><Icon name="clock" size={12}/> LISTA DE ESPERA</p><div className="player-list">{waiting.map((p,i)=><div key={p.id} className="list-row"><span className="list-num">{i+1}</span><Avatar player={players.find(pl=>pl.id===p.id)||p} size={28}/><span className="list-name" style={{marginLeft:4}}>{p.name}</span></div>)}</div></>}
+        </ExpandableCard>
+        <ExpandableCard title="👤 CONVIDAR ALGUÉM">
+          {spotsLeft===0?<div className="guest-locked">🔒 Jogo cheio</div>:<>
+            {confirmed.length<MIN_PLAYERS&&<div className="guest-hint">⚠️ Membros têm prioridade.</div>}
+            <div className="add-guest-row"><input className="text-input" placeholder="Nome do convidado..." value={guestName} onChange={e=>setGuestName(e.target.value)} onKeyDown={e=>e.key==="Enter"&&(onAddGuest(guestName),setGuestName(""))}/><button className="btn-add" onClick={()=>{onAddGuest(guestName);setGuestName("");}}><Icon name="plus" size={16}/></button></div>
+            {myGuests.map(g=><div key={g.id} className="guest-row"><div className="av-guest">{g.name[0]}</div><span className="guest-row-name">{g.name}</span><span className="tag-guest">convidado</span><button className="icon-danger" onClick={()=>onRemoveGuest(g.id)}><Icon name="trash" size={12}/></button></div>)}
           </>}
         </ExpandableCard>
-
-        <ExpandableCard title="👤 CONVIDAR ALGUÉM" defaultOpen={false}>
-          {spotsLeft===0?<div className="guest-locked">🔒 Jogo cheio</div>:(
-            <>
-              {confirmed.length<MIN_PLAYERS&&<div className="guest-hint">⚠️ Membros têm prioridade.</div>}
-              <div className="add-guest-row">
-                <input className="text-input" placeholder="Nome do convidado..." value={guestName} onChange={e=>setGuestName(e.target.value)} onKeyDown={e=>e.key==="Enter"&&(onAddGuest(guestName),setGuestName(""))}/>
-                <button className="btn-add" onClick={()=>{onAddGuest(guestName);setGuestName("");}}><Icon name="plus" size={16}/></button>
-              </div>
-              {myGuests.map(g=>(
-                <div key={g.id} className="guest-row">
-                  <div className="av-guest">{g.name[0]}</div><span className="guest-row-name">{g.name}</span>
-                  <span className="tag-guest">convidado</span>
-                  <button className="icon-danger" onClick={()=>onRemoveGuest(g.id)}><Icon name="trash" size={12}/></button>
-                </div>
-              ))}
-            </>
-          )}
-        </ExpandableCard>
-
         <PiggyBankCard piggybank={piggybank} history={history} cost={gameInfo.cost_per_player||COST}/>
         <div style={{height:70}}/>
       </div>
@@ -1792,7 +1280,7 @@ function PlayerView({gameInfo,cdStr,confirmed,waiting,notYet,guests,spotsLeft,pl
 }
 
 // ── ADMIN VIEW ───────────────────────────────────────────────────────────────
-function AdminView({gameInfo,cdStr,confirmed,waiting,notYet,guests,spotsLeft,players,members,history,piggybank,debts,messages,mvpVotes,attendance,viewingDate,setViewingDate,historyGame,isViewingHistory,effectiveDate,darkMode,setDarkMode,currentUser,adminTab,setAdminTab,onTogglePaid,onRemovePlayer,onAddPlayer,onChangePassword,onResetGame,onTogglePresence,onAddGuest,onRemoveGuest,onUpdateGameInfo,onUpdateProfile,onAddDebt,onPayDebt,onClearHistory,onSendPush,onReassignTeams,onSendMessage,onVoteMvp,onLogout,showToast,setView,view}) {
+function AdminView({gameInfo,cdStr,confirmed,waiting,notYet,guests,spotsLeft,players,members,history,piggybank,debts,messages,mvpVotes,attendance,viewingDate,setViewingDate,historyGame,isViewingHistory,effectiveDate,currentUser,adminTab,setAdminTab,onTogglePaid,onRemovePlayer,onAddPlayer,onChangePassword,onResetGame,onTogglePresence,onAddGuest,onRemoveGuest,onUpdateGameInfo,onAddDebt,onPayDebt,onClearHistory,onSendPush,onReassignTeams,onSendMessage,onVoteMvp,onLogout,showToast,setView,view}) {
   const [newName,setNewName]=useState("");
   const [newUsername,setNewUsername]=useState("");
   const [newPhone,setNewPhone]=useState("");
@@ -1812,7 +1300,24 @@ function AdminView({gameInfo,cdStr,confirmed,waiting,notYet,guests,spotsLeft,pla
   const [debtDesc,setDebtDesc]=useState("");
   const [showReset,setShowReset]=useState(false);
   const [showClearConfirm,setShowClearConfirm]=useState(false);
+  const [inviteCode,setInviteCode]=useState("");
+  const [codeCopied,setCodeCopied]=useState(false);
+
   useEffect(()=>{setEditLoc(gameInfo.location);setEditDate(gameInfo.date);setEditTime(gameInfo.time);setEditAppName(gameInfo.app_name||"Hoje Há Jogo");setEditCost(gameInfo.cost_per_player||3);},[gameInfo]);
+
+  // Buscar código do grupo
+  useEffect(()=>{
+    if(!currentUser?.group_id) return;
+    supabase.from("groups").select("invite_code").eq("id",currentUser.group_id).single().then(({data})=>{ if(data) setInviteCode(data.invite_code); });
+  },[currentUser?.group_id]);
+
+  const handleShareCode = () => {
+    if(navigator.share){ navigator.share({title:"Hoje Há Jogo",text:`Junta-te ao grupo!\nCódigo: ${inviteCode}`,url:"https://hojehajogo.pt"}); }
+    else { navigator.clipboard.writeText(inviteCode).then(()=>{setCodeCopied(true);setTimeout(()=>setCodeCopied(false),2500);showToast("Código copiado ✓");}); }
+  };
+  const handleCopyCode = () => {
+    navigator.clipboard.writeText(inviteCode).then(()=>{setCodeCopied(true);setTimeout(()=>setCodeCopied(false),2500);showToast("Código copiado ✓");});
+  };
 
   const totalPaid=confirmed.filter(p=>p.paid).length;
   const totalUnpaid=confirmed.filter(p=>!p.paid).length;
@@ -1820,34 +1325,45 @@ function AdminView({gameInfo,cdStr,confirmed,waiting,notYet,guests,spotsLeft,pla
 
   return (
     <div className="screen">
-      <FieldHeader {...{gameInfo,cdStr,confirmed,notYet,waiting,viewingDate,setViewingDate,historyGame,isViewingHistory,effectiveDate,darkMode,setDarkMode,attendance}}
-        extraRight={
-          <button className="field-nav-btn" style={{position:"relative"}} onClick={()=>setView("chat")}>
-            <Icon name="chat" size={13}/>
-            {messages.length>0&&<span style={{position:"absolute",top:-3,right:-3,background:"#dc2626",borderRadius:"50%",width:8,height:8}}/>}
-          </button>
-        }
+      <FieldHeader {...{gameInfo,cdStr,confirmed,notYet,waiting,viewingDate,setViewingDate,historyGame,isViewingHistory,effectiveDate,attendance}}
+        extraRight={<button className="field-nav-btn" style={{position:"relative"}} onClick={()=>setView("chat")}><Icon name="chat" size={13}/>{messages.length>0&&<span style={{position:"absolute",top:-3,right:-3,background:"#dc2626",borderRadius:"50%",width:8,height:8}}/>}</button>}
       />
       <div className="body">
         <div className="topbar">
           <span className="topbar-name"><Icon name="shield" size={13}/> <strong>{currentUser.name}</strong> · Admin</span>
-          <div style={{display:"flex",gap:4}}>
-            <button className="icon-ghost" onClick={onLogout}><Icon name="logout" size={16}/></button>
-          </div>
+          <button className="icon-ghost" onClick={onLogout}><Icon name="logout" size={16}/></button>
         </div>
 
+        {/* Mealheiro */}
         <div style={{background:"linear-gradient(135deg,#0891b2,#0e7490)",borderRadius:14,padding:"14px 16px",marginBottom:14,color:"white"}}>
           <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
-            <div>
-              <div style={{fontSize:9,fontWeight:700,letterSpacing:1,opacity:0.8}}>MEALHEIRO</div>
-              <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:32,lineHeight:1}}>{piggybank>=0?"+":""}{piggybank}€</div>
-            </div>
+            <div><div style={{fontSize:9,fontWeight:700,letterSpacing:1,opacity:0.8}}>MEALHEIRO</div><div style={{fontFamily:"'Bebas Neue',cursive",fontSize:32,lineHeight:1}}>{piggybank>=0?"+":""}{piggybank}€</div></div>
             <div style={{display:"flex",gap:14,textAlign:"right"}}>
               <div><div style={{fontSize:9,opacity:0.7}}>RECEBIDO</div><div style={{fontSize:14,fontWeight:800,color:"#86efac"}}>{totalPaid*(gameInfo.cost_per_player||COST)}€</div></div>
               <div><div style={{fontSize:9,opacity:0.7}}>POR RECEBER</div><div style={{fontSize:14,fontWeight:800,color:"#fca5a5"}}>{totalUnpaid*(gameInfo.cost_per_player||COST)}€</div></div>
             </div>
           </div>
         </div>
+
+        {/* Código de convite — visível no topo do painel admin */}
+        {inviteCode&&(
+          <div style={{background:"#111",border:"1px solid #2a2a2a",borderRadius:14,padding:"12px 16px",marginBottom:14}}>
+            <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",flexWrap:"wrap",gap:8}}>
+              <div>
+                <div style={{fontSize:10,fontWeight:700,color:"#6b7280",letterSpacing:1,marginBottom:4}}>CÓDIGO DO GRUPO</div>
+                <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:26,color:"#d4af37",letterSpacing:5}}>{inviteCode}</div>
+              </div>
+              <div style={{display:"flex",gap:8}}>
+                <button onClick={handleCopyCode} style={{background:"rgba(212,175,55,0.1)",border:"1px solid #d4af37",borderRadius:10,padding:"8px 12px",color:codeCopied?"#4ade80":"#d4af37",fontWeight:700,fontSize:12,cursor:"pointer",display:"flex",alignItems:"center",gap:6,transition:"color 0.2s"}}>
+                  <Icon name="copy" size={14}/>{codeCopied?"Copiado!":"Copiar"}
+                </button>
+                <button onClick={handleShareCode} style={{background:"#d4af37",border:"none",borderRadius:10,padding:"8px 14px",color:"#0a0a0a",fontWeight:800,fontSize:12,cursor:"pointer",display:"flex",alignItems:"center",gap:6}}>
+                  <Icon name="share" size={14}/>Partilhar
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
 
         <RotatingHighlights members={members} history={history} mvpVotes={mvpVotes} confirmed={confirmed} gameInfo={gameInfo}/>
         <GroupStatusCard confirmed={confirmed} notYet={notYet} members={members} players={players}/>
@@ -1863,14 +1379,13 @@ function AdminView({gameInfo,cdStr,confirmed,waiting,notYet,guests,spotsLeft,pla
           <ConfirmedList confirmed={confirmed} onTogglePaid={onTogglePaid} isAdmin debts={debts} players={players} cost={gameInfo.cost_per_player||COST}/>
           {waiting.length>0&&<><p className="section-label" style={{marginTop:12}}>⏳ ESPERA</p><div className="player-list">{waiting.map((p,i)=><div key={p.id} className="list-row"><span className="list-num">{i+1}</span><Avatar player={(players||[]).find(pl=>pl.id===p.id)||p} size={26}/><span className="list-name" style={{marginLeft:4}}>{p.name}</span></div>)}</div></>}
           {notYet.length>0&&<><p className="section-label" style={{marginTop:12}}>❓ SEM RESPOSTA ({notYet.length})</p><div className="player-list">{notYet.map(p=><div key={p.id} className="list-row"><Avatar player={(players||[]).find(pl=>pl.id===p.id)||p} size={26}/><span className="list-name" style={{marginLeft:4}}>{p.name}</span></div>)}</div></>}
-          {guests.filter(g=>g.status==="in").length>0&&<><p className="section-label" style={{marginTop:12}}>👤 CONVIDADOS</p>
-          <div className="player-list">{guests.filter(g=>g.status==="in").map(g=><div key={g.id} className="list-row row-guest"><div className="av-guest">{g.name[0]}</div><div className="list-info"><span className="list-name">{g.name}</span><span className="guest-sub">de {g.invited_by}</span></div><button className={`paid-btn ${g.paid?"paid-yes":"paid-no"}`} onClick={()=>onTogglePaid(g.id)}>{g.paid?<><Icon name="check" size={11}/> Pago</>:`Deve ${gameInfo.cost_per_player||COST}€`}</button><button className="icon-danger" onClick={()=>onRemoveGuest(g.id)}><Icon name="trash" size={12}/></button></div>)}</div></>}
+          {guests.filter(g=>g.status==="in").length>0&&<><p className="section-label" style={{marginTop:12}}>👤 CONVIDADOS</p><div className="player-list">{guests.filter(g=>g.status==="in").map(g=><div key={g.id} className="list-row row-guest"><div className="av-guest">{g.name[0]}</div><div className="list-info"><span className="list-name">{g.name}</span><span className="guest-sub">de {g.invited_by}</span></div><button className={`paid-btn ${g.paid?"paid-yes":"paid-no"}`} onClick={()=>onTogglePaid(g.id)}>{g.paid?<><Icon name="check" size={11}/> Pago</>:`Deve ${gameInfo.cost_per_player||COST}€`}</button><button className="icon-danger" onClick={()=>onRemoveGuest(g.id)}><Icon name="trash" size={12}/></button></div>)}</div></>}
           {confirmed.length>=MIN_PLAYERS&&<MvpVote confirmed={confirmed} mvpVotes={mvpVotes} currentUserId={currentUser.id} gameDate={gameInfo.date} onVote={onVoteMvp}/>}
           {!showReset
             ?<button className="btn-danger-full" style={{marginTop:14}} onClick={()=>setShowReset(true)}>🔄 Fechar jogo e guardar no histórico</button>
             :<div style={{background:"rgba(239,68,68,0.12)",border:"2px solid #dc2626",borderRadius:12,padding:14,marginTop:14}}>
               <p style={{fontSize:13,fontWeight:700,color:"#dc2626",marginBottom:10}}>Confirmas que queres fechar o jogo?</p>
-              <p style={{fontSize:11,color:"#6b7280",marginBottom:12}}>Vai guardar no histórico, registar dívidas dos que não pagaram e limpar presenças.</p>
+              <p style={{fontSize:11,color:"#6b7280",marginBottom:12}}>Vai guardar no histórico, registar dívidas e limpar presenças.</p>
               <div style={{display:"flex",gap:8}}>
                 <button className="btn-primary" style={{flex:1,justifyContent:"center",background:"#dc2626"}} onClick={()=>{onResetGame(winnerTeam);setShowReset(false);}}>✓ Confirmar</button>
                 <button className="btn-primary" style={{flex:1,justifyContent:"center",background:"#6b7280"}} onClick={()=>setShowReset(false)}>Cancelar</button>
@@ -1883,9 +1398,7 @@ function AdminView({gameInfo,cdStr,confirmed,waiting,notYet,guests,spotsLeft,pla
           {confirmed.length<MIN_PLAYERS
             ?<div className="guest-locked">⚠️ Precisas de {MIN_PLAYERS} confirmados. ({confirmed.length}/{MIN_PLAYERS})</div>
             :<>
-              <div style={{background:"#0f1a0f",borderRadius:10,padding:"8px 12px",marginBottom:10,fontSize:12,color:"#4ade80",fontWeight:600}}>
-                {confirmed.length>=15?"🏆 3 equipas de 5":`⚽ 2 equipas${confirmed.length%2!==0?" + suplentes":""}`}
-              </div>
+              <div style={{background:"#0f1a0f",borderRadius:10,padding:"8px 12px",marginBottom:10,fontSize:12,color:"#4ade80",fontWeight:600}}>{confirmed.length>=15?"🏆 3 equipas de 5":`⚽ 2 equipas${confirmed.length%2!==0?" + suplentes":""}`}</div>
               <TeamsReveal confirmed={confirmed} players={players} onReassign={onReassignTeams}/>
               <p className="section-label" style={{marginTop:14}}><Icon name="trophy" size={12}/> EQUIPA VENCEDORA</p>
               <div style={{display:"flex",gap:8}}>
@@ -1898,12 +1411,7 @@ function AdminView({gameInfo,cdStr,confirmed,waiting,notYet,guests,spotsLeft,pla
               {winnerTeam&&<div style={{background:"rgba(217,119,6,0.15)",borderRadius:10,padding:"10px 14px",marginTop:8,fontSize:13,fontWeight:700,color:"#fbbf24",textAlign:"center"}}>🏆 Equipa {winnerTeam} venceu!</div>}
             </>}
           <p className="section-label" style={{marginTop:14}}><Icon name="guest" size={12}/> ADICIONAR CONVIDADO</p>
-          {spotsLeft===0?<div className="guest-locked">🔒 Jogo cheio</div>:(
-            <div className="add-guest-row">
-              <input className="text-input" placeholder="Nome do convidado..." value={guestName} onChange={e=>setGuestName(e.target.value)} onKeyDown={e=>e.key==="Enter"&&(onAddGuest(guestName),setGuestName(""))}/>
-              <button className="btn-add" onClick={()=>{onAddGuest(guestName);setGuestName("");}}><Icon name="plus" size={16}/></button>
-            </div>
-          )}
+          {spotsLeft===0?<div className="guest-locked">🔒 Jogo cheio</div>:<div className="add-guest-row"><input className="text-input" placeholder="Nome do convidado..." value={guestName} onChange={e=>setGuestName(e.target.value)} onKeyDown={e=>e.key==="Enter"&&(onAddGuest(guestName),setGuestName(""))}/><button className="btn-add" onClick={()=>{onAddGuest(guestName);setGuestName("");}}><Icon name="plus" size={16}/></button></div>}
         </>}
 
         {adminTab==="dividas"&&<>
@@ -1912,10 +1420,7 @@ function AdminView({gameInfo,cdStr,confirmed,waiting,notYet,guests,spotsLeft,pla
           {debtsByPlayer.map(m=>(
             <div key={m.id} style={{background:"rgba(249,115,22,0.1)",border:"2px solid #f97316",borderRadius:12,padding:12,marginBottom:10}}>
               <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}>
-                <div style={{display:"flex",alignItems:"center",gap:8}}>
-                  <Avatar player={(players||[]).find(p=>p.id===m.id)||m} size={30}/>
-                  <span style={{fontWeight:800,fontSize:14,color:"white"}}>{m.name}</span>
-                </div>
+                <div style={{display:"flex",alignItems:"center",gap:8}}><Avatar player={(players||[]).find(p=>p.id===m.id)||m} size={30}/><span style={{fontWeight:800,fontSize:14,color:"white"}}>{m.name}</span></div>
                 <span style={{fontFamily:"'Bebas Neue',cursive",fontSize:22,color:"#dc2626"}}>{m.total}€</span>
               </div>
               {m.debts.map(d=><DebtRow key={d.id} debt={d} onPayDebt={onPayDebt}/>)}
@@ -1923,18 +1428,13 @@ function AdminView({gameInfo,cdStr,confirmed,waiting,notYet,guests,spotsLeft,pla
           ))}
           <p className="section-label" style={{marginTop:14}}>REGISTAR DÍVIDA MANUAL</p>
           <div style={{background:"#16241c",border:"1px solid #23362a",borderRadius:12,padding:12,display:"flex",flexDirection:"column",gap:8}}>
-            <select className="text-input" value={debtPlayer} onChange={e=>setDebtPlayer(e.target.value)} style={{color:debtPlayer?"white":"#9ca3af"}}>
+            <select className="text-input" value={debtPlayer} onChange={e=>setDebtPlayer(e.target.value)}>
               <option value="">Seleciona jogador...</option>
               {members.filter(m=>!m.is_admin).map(m=><option key={m.id} value={m.id}>{m.name}</option>)}
             </select>
             <input className="text-input" type="number" placeholder="Valor (€)..." value={debtAmount} onChange={e=>setDebtAmount(e.target.value)}/>
             <input className="text-input" placeholder="Descrição..." value={debtDesc} onChange={e=>setDebtDesc(e.target.value)}/>
-            <button className="btn-primary" onClick={()=>{
-              const p=members.find(m=>m.id===Number(debtPlayer));
-              if(!p||!debtAmount) return;
-              onAddDebt(p.id,p.name,Number(debtAmount),debtDesc||"Dívida manual");
-              setDebtPlayer("");setDebtAmount("");setDebtDesc("");
-            }}><Icon name="plus" size={14}/> Registar</button>
+            <button className="btn-primary" onClick={()=>{const p=members.find(m=>m.id===Number(debtPlayer));if(!p||!debtAmount)return;onAddDebt(p.id,p.name,Number(debtAmount),debtDesc||"Dívida manual");setDebtPlayer("");setDebtAmount("");setDebtDesc("");}}><Icon name="plus" size={14}/> Registar</button>
           </div>
         </>}
 
@@ -1949,13 +1449,9 @@ function AdminView({gameInfo,cdStr,confirmed,waiting,notYet,guests,spotsLeft,pla
                 </div>
                 <button className={`paid-btn ${p.status==="in"||p.status==="wait"?"paid-no":"paid-yes"}`} style={{fontSize:10}} onClick={()=>onTogglePresence(p.id)}>{p.status==="in"?"✅ Dentro":p.status==="wait"?"⏳":"❌ Fora"}</button>
                 {!p.is_admin&&<button className="icon-danger" onClick={()=>onRemovePlayer(p.id)}><Icon name="trash" size={13}/></button>}
-                {editPassId===p.id?(
-                  <div style={{width:"100%",display:"flex",gap:6,marginTop:4}}>
-                    <input className="text-input" style={{flex:1,fontSize:12,padding:"7px 10px"}} placeholder="Nova password..." value={editPassVal} onChange={e=>setEditPassVal(e.target.value)} autoFocus/>
-                    <button className="btn-primary" style={{padding:"7px 10px"}} onClick={()=>{onChangePassword(p.id,editPassVal);setEditPassId(null);setEditPassVal("");}}><Icon name="check" size={13}/></button>
-                    <button className="icon-ghost" onClick={()=>setEditPassId(null)}><Icon name="x" size={13}/></button>
-                  </div>
-                ):<button className="icon-ghost" onClick={()=>{setEditPassId(p.id);setEditPassVal("");}}><Icon name="key" size={14}/></button>}
+                {editPassId===p.id
+                  ?<div style={{width:"100%",display:"flex",gap:6,marginTop:4}}><input className="text-input" style={{flex:1,fontSize:12,padding:"7px 10px"}} placeholder="Nova password..." value={editPassVal} onChange={e=>setEditPassVal(e.target.value)} autoFocus/><button className="btn-primary" style={{padding:"7px 10px"}} onClick={()=>{onChangePassword(p.id,editPassVal);setEditPassId(null);setEditPassVal("");}}><Icon name="check" size={13}/></button><button className="icon-ghost" onClick={()=>setEditPassId(null)}><Icon name="x" size={13}/></button></div>
+                  :<button className="icon-ghost" onClick={()=>{setEditPassId(p.id);setEditPassVal("");}}><Icon name="key" size={14}/></button>}
               </div>
             ))}
           </div>
@@ -1982,60 +1478,47 @@ function AdminView({gameInfo,cdStr,confirmed,waiting,notYet,guests,spotsLeft,pla
           </div>
           <p className="section-label" style={{marginTop:16}}><Icon name="plus" size={11}/> ADICIONAR MEMBRO</p>
           <div style={{display:"flex",flexDirection:"column",gap:8}}>
-            <input className="text-input" placeholder="Nome (ex: João Silva)..." value={newName} onChange={e=>setNewName(e.target.value)}/>
-            <input className="text-input" placeholder="Utilizador (ex: joao_s)..." value={newUsername} onChange={e=>setNewUsername(e.target.value)} autoCapitalize="none"/>
+            <input className="text-input" placeholder="Nome..." value={newName} onChange={e=>setNewName(e.target.value)}/>
+            <input className="text-input" placeholder="Utilizador..." value={newUsername} onChange={e=>setNewUsername(e.target.value)} autoCapitalize="none"/>
             <input className="text-input" placeholder="Telemóvel (opcional)..." value={newPhone} onChange={e=>setNewPhone(e.target.value)}/>
             <input className="text-input" placeholder="Password inicial..." value={newPass} onChange={e=>setNewPass(e.target.value)}/>
-            <button className="btn-primary" onClick={()=>{onAddPlayer(newName,newUsername,newPass,newPhone);setNewName("");setNewUsername("");setNewPass("");setNewPhone("");}}>
-              <Icon name="plus" size={14}/> Adicionar membro
-            </button>
+            <button className="btn-primary" onClick={()=>{onAddPlayer(newName,newUsername,newPass,newPhone);setNewName("");setNewUsername("");setNewPass("");setNewPhone("");}}><Icon name="plus" size={14}/> Adicionar membro</button>
           </div>
           <p style={{fontSize:11,color:"#6b7280",marginTop:8}}>💡 O jogador pode entrar com o utilizador OU o telemóvel.</p>
-
           <p className="section-label" style={{marginTop:20}}>🔔 NOTIFICAÇÕES MANUAIS</p>
           <div style={{display:"flex",flexDirection:"column",gap:8,marginBottom:8}}>
             <button className="btn-primary" style={{justifyContent:"center",background:"#16a34a"}} onClick={async()=>{await onSendPush("⚽ Novo jogo disponível!",`Novo jogo marcado para ${gameInfo.date} às ${gameInfo.time}. Confirma presença!`);showToast("Notificação enviada ✓");}}>⚽ Novo jogo disponível</button>
-            <button className="btn-primary" style={{justifyContent:"center",background:"#0891b2"}} onClick={async()=>{await onSendPush("⏰ Lembrete de presença!",`Ainda não confirmaste presença para o jogo de ${gameInfo.date}. Confirma já!`);showToast("Notificação enviada ✓");}}>⏰ Lembrete — Marcar presença</button>
-            <button className="btn-primary" style={{justifyContent:"center",background:"#d97706"}} onClick={async()=>{await onSendPush("💸 Aviso de pagamento!",`Não te esqueças de pagar os ${gameInfo.cost_per_player||3}€ do último jogo!`);showToast("Notificação enviada ✓");}}>💸 Lembrete — Pagamento</button>
-            <button className="btn-primary" style={{justifyContent:"center",background:"#7c3aed"}} onClick={async()=>{await onSendPush("🏆 MVP aberto para votação!","Já há jogadores suficientes — entra na app e vota no MVP da semana!");showToast("Notificação enviada ✓");}}>🏆 MVP aberto para votação</button>
+            <button className="btn-primary" style={{justifyContent:"center",background:"#0891b2"}} onClick={async()=>{await onSendPush("⏰ Lembrete de presença!",`Ainda não confirmaste para ${gameInfo.date}. Confirma já!`);showToast("Notificação enviada ✓");}}>⏰ Lembrete — Marcar presença</button>
+            <button className="btn-primary" style={{justifyContent:"center",background:"#d97706"}} onClick={async()=>{await onSendPush("💸 Aviso de pagamento!",`Não te esqueças de pagar os ${gameInfo.cost_per_player||3}€!`);showToast("Notificação enviada ✓");}}>💸 Lembrete — Pagamento</button>
+            <button className="btn-primary" style={{justifyContent:"center",background:"#7c3aed"}} onClick={async()=>{await onSendPush("🏆 MVP aberto para votação!","Entra na app e vota no MVP da semana!");showToast("Notificação enviada ✓");}}>🏆 MVP aberto para votação</button>
           </div>
-          <p style={{fontSize:11,color:"#6b7280",marginBottom:16}}>💡 Notificações enviadas a todos os subscritores.</p>
-
           <p className="section-label" style={{marginTop:4}}>⚠️ ZONA DE PERIGO</p>
-          {!showClearConfirm ? (
-            <button className="btn-danger-full" onClick={()=>setShowClearConfirm(true)}>🗑️ Limpar histórico e dívidas (reiniciar mealheiro)</button>
-          ) : (
-            <div style={{background:"rgba(239,68,68,0.12)",border:"2px solid #dc2626",borderRadius:12,padding:14}}>
+          {!showClearConfirm
+            ?<button className="btn-danger-full" onClick={()=>setShowClearConfirm(true)}>🗑️ Limpar histórico e dívidas (reiniciar mealheiro)</button>
+            :<div style={{background:"rgba(239,68,68,0.12)",border:"2px solid #dc2626",borderRadius:12,padding:14}}>
               <p style={{fontSize:13,fontWeight:700,color:"#f87171",marginBottom:8}}>Tens a certeza?</p>
-              <p style={{fontSize:11,color:"#6b7280",marginBottom:12}}>Isto apaga todo o histórico de jogos e dívidas. O mealheiro volta a 0€.</p>
+              <p style={{fontSize:11,color:"#6b7280",marginBottom:12}}>Isto apaga todo o histórico e dívidas. O mealheiro volta a 0€.</p>
               <div style={{display:"flex",gap:8}}>
                 <button className="btn-primary" style={{flex:1,justifyContent:"center",background:"#dc2626"}} onClick={()=>{onClearHistory();setShowClearConfirm(false);}}>✓ Confirmar</button>
                 <button className="btn-primary" style={{flex:1,justifyContent:"center",background:"#6b7280"}} onClick={()=>setShowClearConfirm(false)}>Cancelar</button>
               </div>
-            </div>
-          )}
+            </div>}
         </>}
 
         <div style={{height:70}}/>
       </div>
-      <BottomNav view={view} setView={(v)=>{if(v==="equipas_tab"){setAdminTab("equipas");setView("admin");}else setView(v);}} isAdmin={true} hasDebts={debts.length>0} unreadChat={messages.length>0}/>
+      <BottomNav view={view} setView={v=>{if(v==="equipas_tab"){setAdminTab("equipas");setView("admin");}else setView(v);}} isAdmin={true} hasDebts={debts.length>0} unreadChat={messages.length>0}/>
     </div>
   );
 }
 
 // ── CSS ──────────────────────────────────────────────────────────────────────
-function getCss(dm) {
-  const bg    = "#0a0a0a";
-  const card  = "#111111";
-  const text  = "#f0f0f0";
-  const muted = "#6b7280";
-  const border= "#1f1f1f";
-  const input = "#0f0f0f";
+function getCss() {
   return `
 @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@400;600;700;800&display=swap');
 @keyframes spin{to{transform:rotate(360deg);}}
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
-body{background:${dm?"#0a0f0a":"#0a140e"};font-family:'DM Sans',sans-serif;color:${text};min-height:100vh;}
+body{background:#0a0a0a;font-family:'DM Sans',sans-serif;color:#f0f0f0;min-height:100vh;}
 .screen{min-height:100vh;display:flex;flex-direction:column;max-width:480px;margin:0 auto;}
 .spinner{width:36px;height:36px;border:4px solid rgba(255,255,255,0.3);border-top-color:white;border-radius:50%;animation:spin 0.8s linear infinite;}
 .field-header{position:relative;overflow:hidden;background:linear-gradient(160deg,#1a4d2e 0%,#0f3320 60%,#0a2618 100%);padding:16px 16px 14px;border-bottom:2px solid #d4af37;}
@@ -2064,76 +1547,57 @@ body{background:${dm?"#0a0f0a":"#0a140e"};font-family:'DM Sans',sans-serif;color
 .pct-row{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:5px;}
 .pct-label{font-size:10px;font-weight:700;}
 .pct-label.green{color:#4ade80;}.pct-label.muted{color:rgba(255,255,255,0.4);}.pct-label.yellow{color:#fbbf24;}
-.body,.login-body{flex:1;background:${bg};color:${text};padding:16px 16px 48px;}
+.body{flex:1;background:#0a0a0a;color:#f0f0f0;padding:16px 16px 48px;}
 .topbar{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;}
 .topbar-name{font-size:14px;color:#4ade80;font-weight:700;}
-.section-label{font-size:10px;font-weight:800;letter-spacing:1.5px;color:${muted};text-transform:uppercase;margin-bottom:8px;display:flex;align-items:center;gap:5px;}
-.player-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px;}
-.player-card{background:${card};border:2px solid ${border};border-radius:12px;padding:12px 8px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:4px;transition:all .15s;color:${text};font-family:'DM Sans',sans-serif;}
-.player-card:hover,.player-card.selected{border-color:#16a34a;box-shadow:0 0 0 3px rgba(22,163,74,.2);}
-.player-card-name{font-size:12px;font-weight:700;}
-.av-wait{width:28px;height:28px;border-radius:50%;background:linear-gradient(135deg,#d97706,#b45309);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;color:white;flex-shrink:0;box-shadow:0 2px 6px rgba(0,0,0,0.3);}
-.av-out{width:28px;height:28px;border-radius:50%;background:${dm?"#243024":"#1c2920"};color:${muted};border:1px solid ${border};display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;flex-shrink:0;}
-.av-guest{width:28px;height:28px;border-radius:50%;background:linear-gradient(135deg,#a855f7,#7c3aed);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;color:white;flex-shrink:0;box-shadow:0 2px 6px rgba(0,0,0,0.3);}
-.pw-box{background:${card};border:2px solid ${border};border-radius:14px;padding:14px;display:flex;flex-direction:column;gap:10px;box-shadow:0 8px 24px rgba(0,0,0,0.25);}
-.pw-label{font-size:13px;color:${muted};}.pw-label strong{color:${text};}
-.pw-row{display:flex;gap:8px;}
-.pw-input{flex:1;background:${input};border:2px solid ${border};border-radius:10px;padding:10px 14px;color:${text};font-size:14px;outline:none;font-family:'DM Sans',sans-serif;}
-.pw-input:focus{border-color:#16a34a;}
+.section-label{font-size:10px;font-weight:800;letter-spacing:1.5px;color:#6b7280;text-transform:uppercase;margin-bottom:8px;display:flex;align-items:center;gap:5px;}
+.av-guest{width:28px;height:28px;border-radius:50%;background:linear-gradient(135deg,#a855f7,#7c3aed);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;color:white;flex-shrink:0;}
 .btn-primary{background:#16a34a;color:white;border:none;border-radius:10px;padding:11px 18px;font-weight:800;cursor:pointer;font-size:13px;font-family:'DM Sans',sans-serif;display:flex;align-items:center;gap:6px;}
 .btn-primary:hover{background:#15803d;}
-.btn-outline{width:100%;padding:10px;border-radius:10px;border:2px solid ${border};background:${card};color:#4ade80;font-weight:800;font-size:12px;font-family:'DM Sans',sans-serif;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;}
-.btn-outline:hover{background:${dm?"#1a2e1a":"#1c2920"};}
 .btn-big{width:100%;padding:13px;border-radius:12px;border:none;cursor:pointer;font-size:14px;font-weight:800;font-family:'Bebas Neue',cursive;letter-spacing:1.5px;display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:14px;box-shadow:0 6px 16px rgba(0,0,0,0.25);}
 .btn-big:hover{filter:brightness(1.08);}
 .btn-green{background:linear-gradient(135deg,#22c55e,#15803d);color:white;}.btn-red{background:linear-gradient(135deg,#ef4444,#b91c1c);color:white;}
 .btn-add{background:#16a34a;color:white;border:none;border-radius:10px;padding:10px 13px;cursor:pointer;display:flex;align-items:center;flex-shrink:0;}
 .btn-danger-full{background:rgba(239,68,68,0.15);color:#f87171;border:1px solid rgba(239,68,68,0.3);border-radius:10px;padding:12px;font-weight:800;cursor:pointer;font-size:12px;font-family:'DM Sans',sans-serif;width:100%;text-align:center;}
-.icon-ghost{background:transparent;border:none;border-radius:8px;padding:7px;color:${muted};cursor:pointer;display:flex;align-items:center;}
-.icon-ghost:hover{background:${dm?"#1a2e1a":"#1c2920"};color:${text};}
+.icon-ghost{background:transparent;border:none;border-radius:8px;padding:7px;color:#6b7280;cursor:pointer;display:flex;align-items:center;}
+.icon-ghost:hover{background:#1a2e1a;color:#f0f0f0;}
 .icon-danger{background:rgba(239,68,68,0.15);border:none;border-radius:8px;padding:7px;color:#f87171;cursor:pointer;display:flex;flex-shrink:0;}
 .status-banner{border-radius:14px;padding:12px 14px;display:flex;align-items:center;gap:12px;margin-bottom:14px;}
-.sb-in{background:rgba(34,197,94,0.15);border:1px solid rgba(34,197,94,0.3);}.sb-wait{background:rgba(217,119,6,0.15);border:1px solid rgba(217,119,6,0.3);}.sb-out{background:${dm?"#1a2e1a":"#142019"};border:2px solid ${border};}
-.sb-icon{font-size:22px;}.sb-title{font-size:14px;font-weight:800;color:${text};}.sb-sub{font-size:11px;color:${muted};margin-top:2px;}
+.sb-in{background:rgba(34,197,94,0.15);border:1px solid rgba(34,197,94,0.3);}
+.sb-wait{background:rgba(217,119,6,0.15);border:1px solid rgba(217,119,6,0.3);}
+.sb-out{background:#142019;border:2px solid #1f1f1f;}
+.sb-icon{font-size:22px;}.sb-title{font-size:14px;font-weight:800;color:#f0f0f0;}.sb-sub{font-size:11px;color:#6b7280;margin-top:2px;}
 .player-list{display:flex;flex-direction:column;gap:5px;margin-bottom:4px;}
-.list-row{display:flex;align-items:center;gap:8px;background:${card};border-radius:10px;padding:9px 12px;border:1px solid ${border};}
-.row-guest{border-color:rgba(168,85,247,0.3);background:${dm?"#1a1330":"#1d1730"};}
-.list-num{font-size:10px;color:${muted};width:14px;text-align:center;flex-shrink:0;}
+.list-row{display:flex;align-items:center;gap:8px;background:#111;border-radius:10px;padding:9px 12px;border:1px solid #1f1f1f;}
+.row-guest{border-color:rgba(168,85,247,0.3);background:#1d1730;}
+.list-num{font-size:10px;color:#6b7280;width:14px;text-align:center;flex-shrink:0;}
 .list-info{display:flex;flex-direction:column;flex:1;min-width:0;}
-.list-name{font-size:13px;font-weight:700;color:${text};}
+.list-name{font-size:13px;font-weight:700;color:#f0f0f0;}
 .guest-sub{font-size:10px;color:#a855f7;margin-top:1px;}
 .admin-chip{color:#d4af37;}
-.empty-msg{font-size:12px;color:${muted};text-align:center;padding:12px 0;}
+.empty-msg{font-size:12px;color:#6b7280;text-align:center;padding:12px 0;}
 .paid-chip,.paid-btn{font-size:11px;font-weight:700;border-radius:8px;padding:4px 9px;flex-shrink:0;}
 .paid-chip{border:none;}.paid-btn{border:none;cursor:pointer;display:flex;align-items:center;gap:3px;font-family:'DM Sans',sans-serif;}
 .paid-yes{background:rgba(34,197,94,0.2);color:#4ade80;}.paid-no{background:rgba(239,68,68,0.2);color:#f87171;}
-.money-row{display:flex;gap:8px;margin-bottom:14px;}
-.money-box{flex:1;border-radius:12px;padding:10px 8px;text-align:center;display:flex;flex-direction:column;gap:3px;}
-.green-box{background:rgba(34,197,94,0.15);border:1px solid rgba(34,197,94,0.25);}.red-box{background:rgba(239,68,68,0.15);border:1px solid rgba(239,68,68,0.25);}
-.money-num{font-family:'Bebas Neue',cursive;font-size:22px;line-height:1;}
-.green-box .money-num{color:#4ade80;}.red-box .money-num{color:#f87171;}
-.money-label{font-size:9px;font-weight:800;letter-spacing:1px;color:${muted};text-transform:uppercase;}
-.card-section{background:${card};border:2px solid ${border};border-radius:14px;padding:13px;box-shadow:0 4px 16px rgba(0,0,0,0.2);}
-.tabs{display:flex;gap:2px;background:${dm?"#1a2e1a":"#142019"};border-radius:10px;padding:3px;margin-bottom:14px;border:1px solid ${border};}
-.tab{flex:1;padding:7px 2px;border-radius:8px;border:none;cursor:pointer;background:transparent;color:${muted};font-size:15px;font-family:'DM Sans',sans-serif;transition:all .15s;}
+.tabs{display:flex;gap:2px;background:#142019;border-radius:10px;padding:3px;margin-bottom:14px;border:1px solid #1f1f1f;}
+.tab{flex:1;padding:7px 2px;border-radius:8px;border:none;cursor:pointer;background:transparent;color:#6b7280;font-size:15px;font-family:'DM Sans',sans-serif;transition:all .15s;}
 .tab-active{background:linear-gradient(135deg,#22c55e,#15803d);color:white;}
-.guest-locked{background:${dm?"#1a2e1a":"#0f1c14"};border:2px dashed ${border};border-radius:10px;padding:14px;text-align:center;font-size:13px;color:${muted};}
+.guest-locked{background:#0f1c14;border:2px dashed #1f1f1f;border-radius:10px;padding:14px;text-align:center;font-size:13px;color:#6b7280;}
 .guest-hint{background:rgba(217,119,6,0.15);border:1px solid rgba(217,119,6,0.3);border-radius:10px;padding:9px 12px;font-size:11px;color:#fbbf24;font-weight:600;margin-bottom:8px;}
 .add-guest-row{display:flex;gap:8px;margin-bottom:8px;}
-.guest-row{display:flex;align-items:center;gap:8px;background:${dm?"#1a1330":"#1d1730"};border-radius:10px;padding:8px 10px;margin-top:6px;border:1px solid rgba(168,85,247,0.3);}
-.guest-row-name{flex:1;font-size:13px;font-weight:700;color:${text};}
+.guest-row{display:flex;align-items:center;gap:8px;background:#1d1730;border-radius:10px;padding:8px 10px;margin-top:6px;border:1px solid rgba(168,85,247,0.3);}
+.guest-row-name{flex:1;font-size:13px;font-weight:700;color:#f0f0f0;}
 .tag-guest{font-size:10px;font-weight:700;background:rgba(168,85,247,0.2);color:#c084fc;border-radius:20px;padding:2px 8px;flex-shrink:0;}
-.text-input{background:${input};border:2px solid ${border};border-radius:10px;padding:10px 14px;color:${text};font-size:13px;font-family:'DM Sans',sans-serif;outline:none;width:100%;}
+.text-input{background:#0f0f0f;border:2px solid #1f1f1f;border-radius:10px;padding:10px 14px;color:#f0f0f0;font-size:13px;font-family:'DM Sans',sans-serif;outline:none;width:100%;}
 .text-input:focus{border-color:#16a34a;}
-.text-input::placeholder{color:${muted};}
+.text-input::placeholder{color:#6b7280;}
 input[type="date"],input[type="time"]{color-scheme:dark;}
 select.text-input{appearance:none;}
-.game-info-card{background:${card};border:2px solid ${border};border-radius:14px;padding:16px;display:"flex";flex-direction:column;gap:10px;box-shadow:0 4px 16px rgba(0,0,0,0.2);}
-.game-info-card{display:flex;flex-direction:column;gap:10px;}
+.game-info-card{background:#111;border:2px solid #1f1f1f;border-radius:14px;padding:16px;display:flex;flex-direction:column;gap:10px;}
 .game-info-header{display:flex;align-items:center;gap:6px;font-size:11px;font-weight:800;letter-spacing:1px;color:#d4af37;text-transform:uppercase;}
-.field-label{font-size:11px;font-weight:700;color:${muted};display:flex;align-items:center;gap:4px;margin-bottom:4px;}
+.field-label{font-size:11px;font-weight:700;color:#6b7280;display:flex;align-items:center;gap:4px;margin-bottom:4px;}
 .date-time-row{display:flex;gap:10px;}
-.btn-save{width:100%;padding:11px;border-radius:10px;border:2px solid ${border};background:${dm?"#1a2e1a":"#0f1c14"};color:${muted};font-weight:800;font-size:12px;font-family:'DM Sans',sans-serif;cursor:not-allowed;display:flex;align-items:center;justify-content:center;gap:6px;transition:all .2s;}
+.btn-save{width:100%;padding:11px;border-radius:10px;border:2px solid #1f1f1f;background:#0f1c14;color:#6b7280;font-weight:800;font-size:12px;font-family:'DM Sans',sans-serif;cursor:not-allowed;display:flex;align-items:center;justify-content:center;gap:6px;transition:all .2s;}
 .btn-save-active{background:#16a34a;color:white;border-color:#16a34a;cursor:pointer;}
 .btn-save-active:hover{background:#15803d;}
 .toast{position:fixed;top:16px;left:50%;transform:translateX(-50%);border-radius:12px;padding:11px 20px;font-size:13px;font-weight:700;color:white;z-index:9999;box-shadow:0 8px 24px rgba(0,0,0,.4);white-space:nowrap;font-family:'DM Sans',sans-serif;}
