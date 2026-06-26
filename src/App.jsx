@@ -145,6 +145,7 @@ export default function App() {
   const effectiveDate = viewingDate || gameInfo.date;
 
   const showToast = (msg,type="ok") => { setToast({msg,type}); setTimeout(()=>setToast(null),3000); };
+  const groupIdRef = useRef(null); // guarda o groupId atual para os subscriptions
 
   const loadPlayers    = useCallback(async(gid=null)=>{ let q=supabase.from("players").select("*").order("id"); if(gid) q=q.eq("group_id",gid); const{data}=await q; if(data)setPlayers(data); },[]);
   const loadGameInfo   = useCallback(async(gid=null)=>{ let q=supabase.from("game_info").select("*"); if(gid){q=q.eq("group_id",gid).limit(1).single();}else{q=q.eq("id",1).single();} const{data}=await q; if(data)setGameInfo(data); },[]);
@@ -161,17 +162,20 @@ export default function App() {
   useEffect(()=>{
     (async()=>{ setLoading(true); await reloadAll(); setLoading(false); })();
     const subs=[
-      supabase.channel("players_ch").on("postgres_changes",{event:"*",schema:"public",table:"players"},()=>loadPlayers()).subscribe(),
-      supabase.channel("gameinfo_ch").on("postgres_changes",{event:"*",schema:"public",table:"game_info"},()=>loadGameInfo()).subscribe(),
-      supabase.channel("history_ch").on("postgres_changes",{event:"*",schema:"public",table:"game_history"},()=>loadHistory()).subscribe(),
-      supabase.channel("debts_ch").on("postgres_changes",{event:"*",schema:"public",table:"debts"},()=>loadDebts()).subscribe(),
-      supabase.channel("chat_ch").on("postgres_changes",{event:"*",schema:"public",table:"chat_messages"},()=>loadMessages()).subscribe(),
-      supabase.channel("mvp_ch").on("postgres_changes",{event:"*",schema:"public",table:"mvp_votes"},()=>loadMvp()).subscribe(),
+      supabase.channel("players_ch").on("postgres_changes",{event:"*",schema:"public",table:"players"},()=>loadPlayers(groupIdRef.current)).subscribe(),
+      supabase.channel("gameinfo_ch").on("postgres_changes",{event:"*",schema:"public",table:"game_info"},()=>loadGameInfo(groupIdRef.current)).subscribe(),
+      supabase.channel("history_ch").on("postgres_changes",{event:"*",schema:"public",table:"game_history"},()=>loadHistory(groupIdRef.current)).subscribe(),
+      supabase.channel("debts_ch").on("postgres_changes",{event:"*",schema:"public",table:"debts"},()=>loadDebts(groupIdRef.current)).subscribe(),
+      supabase.channel("chat_ch").on("postgres_changes",{event:"*",schema:"public",table:"chat_messages"},()=>loadMessages(groupIdRef.current)).subscribe(),
+      supabase.channel("mvp_ch").on("postgres_changes",{event:"*",schema:"public",table:"mvp_votes"},()=>loadMvp(groupIdRef.current)).subscribe(),
     ];
     return()=>subs.forEach(s=>supabase.removeChannel(s));
   },[]);
 
   useEffect(()=>{ if(!viewingDate){setHistoryGame(null);return;} setHistoryGame(history.find(h=>h.date===viewingDate)||null); },[viewingDate,history]);
+
+  // Actualiza a ref do groupId quando o user faz login
+  useEffect(()=>{ if(currentUser?.group_id) groupIdRef.current=currentUser.group_id; },[currentUser]);
 
   // Fecho automático 3h30 após o jogo — vai buscar dados frescos ao Supabase
   useEffect(()=>{
