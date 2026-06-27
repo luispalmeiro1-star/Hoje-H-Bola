@@ -214,7 +214,14 @@ export default function App() {
       // Limpar o URL sem recarregar
       window.history.replaceState({}, "", window.location.pathname);
     }
-    (async()=>{ setLoading(true); await reloadAll(); setLoading(false); })();
+    (async()=>{
+      setLoading(true);
+      try{ await reloadAll(); }
+      catch(e){ console.error("reloadAll error:",e); }
+      finally{ setLoading(false); }
+    })();
+    // Safety — se loading ainda estiver true após 8s, forçar false
+    const safetyTimer=setTimeout(()=>setLoading(false),8000);
     const subs=[
       supabase.channel("players_ch").on("postgres_changes",{event:"*",schema:"public",table:"players"},()=>loadPlayers(groupIdRef.current)).subscribe(),
       supabase.channel("gameinfo_ch").on("postgres_changes",{event:"*",schema:"public",table:"game_info"},()=>loadGameInfo(groupIdRef.current)).subscribe(),
@@ -223,7 +230,7 @@ export default function App() {
       supabase.channel("chat_ch").on("postgres_changes",{event:"*",schema:"public",table:"chat_messages"},()=>loadMessages(groupIdRef.current)).subscribe(),
       supabase.channel("mvp_ch").on("postgres_changes",{event:"*",schema:"public",table:"mvp_votes"},()=>loadMvp(groupIdRef.current)).subscribe(),
     ];
-    return()=>subs.forEach(s=>supabase.removeChannel(s));
+    return()=>{ subs.forEach(s=>supabase.removeChannel(s)); clearTimeout(safetyTimer); };
   },[]);
 
   useEffect(()=>{ if(!viewingDate){setHistoryGame(null);return;} setHistoryGame(history.find(h=>h.date===viewingDate)||null); },[viewingDate,history]);
@@ -295,7 +302,6 @@ export default function App() {
     if(loading||currentUser||players.length===0) return;
     (async()=>{
       try{
-        const saved=JSON.parse(localStorage.getItem("hhb_session"));
         if(saved?.playerId){
           const p=players.find(pl=>pl.id===saved.playerId);
           if(p){
@@ -322,7 +328,7 @@ export default function App() {
             }
           } else { localStorage.removeItem("hhb_session"); setView("landing"); }
         } else setView("landing");
-      }catch(e){setView("landing");}
+      }catch(e){ console.error("Session restore error:",e); localStorage.removeItem("hhb_session"); setView("landing"); }
     })();
   },[loading,players]);
 
