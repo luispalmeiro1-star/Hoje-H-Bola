@@ -207,9 +207,9 @@ export default function App() {
     const urlGroupId = params.get("g");
     if(urlGroupId) {
       const gid = Number(urlGroupId);
-      const saved = JSON.parse(localStorage.getItem("hhb_session")||"{}");
-      if(saved.playerId) {
-        localStorage.setItem("hhb_session", JSON.stringify({playerId:saved.playerId, groupId:gid}));
+      const savedSession = JSON.parse(localStorage.getItem("hhb_session")||"{}");
+      if(savedSession.playerId) {
+        localStorage.setItem("hhb_session", JSON.stringify({playerId:savedSession.playerId, groupId:gid}));
       }
       // Limpar o URL sem recarregar
       window.history.replaceState({}, "", window.location.pathname);
@@ -302,6 +302,7 @@ export default function App() {
     if(loading||currentUser||players.length===0) return;
     (async()=>{
       try{
+        const saved=JSON.parse(localStorage.getItem("hhb_session")||"null");
         if(saved?.playerId){
           const p=players.find(pl=>pl.id===saved.playerId);
           if(p){
