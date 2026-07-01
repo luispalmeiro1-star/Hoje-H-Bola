@@ -169,6 +169,7 @@ export default function App() {
   const [mvpVotes, setMvpVotes]       = useState([]);
   const [piggybank, setPiggybank]     = useState(0);
   const [currentUser, setCurrentUser] = useState(null);
+  const [activeGroupId, setActiveGroupId] = useState(null);
   const [view, setView]               = useState("landing");
   const [myGroups, setMyGroups]       = useState([]);
   const [toast, setToast]             = useState(null);
@@ -222,8 +223,8 @@ export default function App() {
 
   useEffect(()=>{ if(!viewingDate){setHistoryGame(null);return;} setHistoryGame(history.find(h=>h.date===viewingDate)||null); },[viewingDate,history]);
 
-  // Actualiza a ref do groupId quando o user faz login
-  useEffect(()=>{ if(currentUser?.group_id) groupIdRef.current=currentUser.group_id; },[currentUser]);
+  // Actualiza a ref do groupId quando activeGroupId muda
+  useEffect(()=>{ if(activeGroupId) groupIdRef.current=activeGroupId; },[activeGroupId]);
 
   // Fecho automático 3h30 após o jogo — vai buscar dados frescos ao Supabase
   useEffect(()=>{
@@ -234,7 +235,7 @@ export default function App() {
     gameEnd.setMinutes(gameEnd.getMinutes()+210); // +3h30
     const msUntilClose=gameEnd-new Date();
     if(msUntilClose<=0) return; // já passou, não agenda
-    const groupId=currentUser.group_id||null;
+    const groupId=activeGroupId||null;
     const gDate=gameInfo.date;
     const gCost=gameInfo.cost_per_player||COST;
     const gId=gameInfo.id||1;
@@ -283,7 +284,7 @@ export default function App() {
       await reloadAll(groupId);
     }, msUntilClose);
     return ()=>clearTimeout(timer);
-  },[gameInfo.date, gameInfo.time, currentUser?.id]);
+  },[gameInfo.date, gameInfo.time, currentUser?.id, activeGroupId]);
 
   useEffect(()=>{
     if(loading||currentUser||players.length===0) return;
@@ -299,19 +300,29 @@ export default function App() {
               const{data:grpCheck}=await supabase.from("groups").select("id").eq("id",saved.groupId).maybeSingle();
               if(grpCheck){
                 groupIdRef.current=saved.groupId;
-                reloadAll(saved.groupId);
+                setActiveGroupId(saved.groupId);
+                await reloadAll(saved.groupId);
                 setView(p.is_admin?"admin":"player");
               } else {
                 // groupId inválido — limpar e verificar grupos
                 localStorage.removeItem("hhb_session");
-                const{data:pg}=await supabase.from("player_groups").select("group_id, is_admin, groups(id,name,location,time)").eq("player_id",p.id);
-                if(pg&&pg.length>0){ setMyGroups(pg); setView("meus-grupos"); }
-                else setView("landing");
+                const{data:pgRaw}=await supabase.from("player_groups").select("group_id,is_admin").eq("player_id",p.id);
+                if(pgRaw&&pgRaw.length>0){
+                  const gids=pgRaw.map(x=>x.group_id);
+                  const{data:gData}=await supabase.from("groups").select("id,name,location,time").in("id",gids);
+                  const enriched=pgRaw.map(x=>({...x,groups:gData?.find(g=>g.id===x.group_id)||null}));
+                  setMyGroups(enriched); setView("meus-grupos");
+                } else setView("landing");
               }
             } else {
               // Sem groupId guardado — verificar grupos
-              const{data:pg}=await supabase.from("player_groups").select("group_id, is_admin, groups(id,name,location,time)").eq("player_id",p.id);
-              if(pg&&pg.length>1){ setMyGroups(pg); setView("meus-grupos"); }
+              const{data:pgRaw}=await supabase.from("player_groups").select("group_id, is_admin").eq("player_id",p.id);
+              if(pgRaw&&pgRaw.length>1){
+                const gids=pgRaw.map(pg=>pg.group_id);
+                const{data:gData}=await supabase.from("groups").select("id,name,location,time").in("id",gids);
+                const enriched=pgRaw.map(pg=>({...pg,groups:gData?.find(g=>g.id===pg.group_id)||null}));
+                setMyGroups(enriched); setView("meus-grupos");
+              }
               else setView(p.is_admin?"admin":"player");
             }
           } else { localStorage.removeItem("hhb_session"); setView("landing"); }
@@ -353,17 +364,20 @@ export default function App() {
     setCurrentUser(p);
     linkOneSignal(p.id);
     // Verificar quantos grupos este player tem
-    const{data:playerGroups}=await supabase.from("player_groups").select("group_id, is_admin, groups(id,name,location,time)").eq("player_id",p.id);
+    const{data:playerGroups}=await supabase.from("player_groups").select("group_id, is_admin").eq("player_id",p.id);
     if(playerGroups&&playerGroups.length>1){
-      // Tem múltiplos grupos — mostrar seleção
-      setMyGroups(playerGroups);
+      // Buscar dados dos grupos separadamente
+      const groupIds=playerGroups.map(pg=>pg.group_id);
+      const{data:groupsData}=await supabase.from("groups").select("id,name,location,time").in("id",groupIds);
+      const enriched=playerGroups.map(pg=>({...pg,groups:groupsData?.find(g=>g.id===pg.group_id)||null}));
+      setMyGroups(enriched);
       setView("meus-grupos");
       localStorage.setItem("hhb_session",JSON.stringify({playerId:p.id,groupId:null}));
     } else {
       // Tem um grupo (ou nenhum) — entrar direto
       const effectiveGroupId=p.group_id||null;
       localStorage.setItem("hhb_session",JSON.stringify({playerId:p.id,groupId:effectiveGroupId}));
-      if(effectiveGroupId){ groupIdRef.current=effectiveGroupId; await reloadAll(effectiveGroupId); }
+      if(effectiveGroupId){ groupIdRef.current=effectiveGroupId; setActiveGroupId(effectiveGroupId); await reloadAll(effectiveGroupId); }
       else await reloadAll();
       setView(p.is_admin?"admin":"player");
     }
@@ -372,12 +386,14 @@ export default function App() {
   const handleLogout  = ()=>{ setCurrentUser(null); setView("landing"); setViewingDate(null); };
   const handleMudarGrupo = async()=>{
     if(!currentUser) return;
-    const{data:pg}=await supabase.from("player_groups").select("group_id, is_admin, groups(id,name,location,time)").eq("player_id",currentUser.id);
-    if(pg&&pg.length>1){
-      setMyGroups(pg);
+    const{data:pgRaw}=await supabase.from("player_groups").select("group_id,is_admin").eq("player_id",currentUser.id);
+    if(pgRaw&&pgRaw.length>0){
+      const gids=pgRaw.map(pg=>pg.group_id);
+      const{data:gData}=await supabase.from("groups").select("id,name,location,time").in("id",gids);
+      const enriched=pgRaw.map(pg=>({...pg,groups:gData?.find(g=>g.id===pg.group_id)||null}));
+      setMyGroups(enriched);
       setView("meus-grupos");
     } else {
-      // Só tem um grupo — ir direto para entrar com convite
       setView("entrar-convite");
     }
   };
@@ -538,15 +554,23 @@ export default function App() {
       <style>{getCss()}</style>
       {toast&&<div className={`toast toast-${toast.type}`}>{toast.msg}</div>}
       {view==="landing"        && <LandingView setView={setView}/>}
-      {view==="meus-grupos"    && <MeusGruposView groups={myGroups} onSelect={(groupId)=>{
+      {view==="meus-grupos"    && <MeusGruposView groups={myGroups} onSelect={async(groupId)=>{
         const gid = Number(groupId);
-        console.log("Switching to group:", gid, typeof gid);
         localStorage.setItem("hhb_session",JSON.stringify({playerId:Number(currentUser?.id),groupId:gid}));
-        window.location.href="/";
+        groupIdRef.current=gid;
+        setActiveGroupId(gid);
+        await reloadAll(gid);
+        // Verificar se é admin neste grupo
+        const pg=myGroups.find(x=>x.group_id===gid);
+        setView(pg?.is_admin?"admin":"player");
       }} onLogout={handleLogout} onCriarGrupo={()=>{ setCurrentUser(null); setView("criar-grupo"); }} onEntrarCodigo={()=>setView("entrar-convite")} currentUser={currentUser}/>}
       {view==="login"          && <LoginView onLogin={handleLogin} showToast={showToast} setView={setView}/>}
       {view==="criar-grupo"    && <CriarGrupoView setView={setView} showToast={showToast} onLogin={handleLogin} reloadAll={reloadAll}/>}
-      {view==="entrar-convite" && <EntrarConviteView setView={setView} showToast={showToast} currentUser={currentUser} onGrupoAdicionado={async()=>{ if(currentUser){ const{data:pg}=await supabase.from("player_groups").select("group_id, is_admin, groups(id,name,location,time)").eq("player_id",currentUser.id); setMyGroups(pg||[]); setView("meus-grupos"); }else setView("landing"); }}/>}
+      {view==="entrar-convite" && <EntrarConviteView setView={setView} showToast={showToast} currentUser={currentUser} onGrupoAdicionado={async()=>{ if(currentUser){ const{data:pgRaw}=await supabase.from("player_groups").select("group_id, is_admin").eq("player_id",currentUser.id);
+              const gids2=(pgRaw||[]).map(pg=>pg.group_id);
+              const{data:gData2}=await supabase.from("groups").select("id,name,location,time").in("id",gids2);
+              const enriched2=(pgRaw||[]).map(pg=>({...pg,groups:gData2?.find(g=>g.id===pg.group_id)||null}));
+              setMyGroups(enriched2); setView("meus-grupos"); }else setView("landing"); }}/>}
       {view==="criar-conta"    && <CriarContaView setView={setView} showToast={showToast}/>}
       {view==="player"  && liveUser && <PlayerView  {...shared} view={view} player={liveUser} onToggle={()=>togglePresence(liveUser.id)} onAddGuest={n=>addGuest(n,liveUser.id)} onRemoveGuest={removeGuest} onUpdateProfile={(name,pw,color,phone)=>updateProfile(liveUser.id,name,pw,color,phone)} onVoteMvp={vid=>voteForMvp(liveUser.id,vid)} onSendMessage={t=>sendMessage(t,liveUser.id,liveUser.name)} onUpdatePosition={pos=>updatePosition(liveUser.id,pos)} onLogout={switchAccount} setView={setView}/>}
       {view==="admin"   && liveUser && <AdminView   {...shared} view={view} currentUser={liveUser} adminTab={adminTab} setAdminTab={setAdminTab} onTogglePaid={togglePaid} onRemovePlayer={removePlayer} onAddPlayer={addPlayer} onChangePassword={changePassword} onResetGame={resetGame} onTogglePresence={togglePresence} onAddGuest={n=>addGuest(n,liveUser.id)} onRemoveGuest={removeGuest} onUpdateGameInfo={updateGameInfo} onUpdateProfile={(name,pw,color,phone)=>updateProfile(liveUser.id,name,pw,color,phone)} onAddDebt={addDebt} onPayDebt={payDebt} onClearHistory={clearAllHistory} onSendPush={sendPushNotification} onReassignTeams={reassignAllTeams} onSendMessage={t=>sendMessage(t,liveUser.id,liveUser.name)} onVoteMvp={vid=>voteForMvp(liveUser.id,vid)} onLogout={switchAccount} showToast={showToast} setView={setView}/>}
